@@ -16,6 +16,7 @@
   .badge-agentes { background:#dbeafe; color:#1e40af; }
   .badge-salud { background:#ccfbf1; color:#0f766e; }
   .badge-contrato { background:#dcfce7; color:#166534; }
+  .badge-pendiente { background:#fef3c7; color:#92400e; }
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
@@ -56,14 +57,15 @@
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
     <div class="flex items-center gap-2 mb-3 text-slate-500 text-xs font-semibold uppercase tracking-wide">
       <i class="fa-solid fa-sliders"></i> Filtros globales
+      <span class="normal-case font-normal text-slate-400">&middot; Año y Mes se calculan sobre la Fecha de Emisión</span>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">Año</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Año (Emisión)</label>
         <select id="filtroAnio" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">Mes</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Mes (Emisión)</label>
         <select id="filtroMes" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
       </div>
       <div>
@@ -71,8 +73,9 @@
         <select id="filtroColaborador" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">Valor UF de cierre ($)</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Valor UF de cierre del mes ($)</label>
         <input id="filtroValorUF" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        <p class="text-[11px] text-slate-400 mt-1">Se guarda un valor por cada Año/Mes — cambia de período arriba para ver o editar el suyo.</p>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">Persistencia % del agente</label>
@@ -124,19 +127,16 @@
         <i class="fa-solid fa-circle-plus"></i> Nueva transacción / póliza
       </div>
       <form id="formTransaccion" class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">Colaborador</label>
-          <input id="fColaborador" list="listaColaboradores" required placeholder="Ej: Carlos Mendoza" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-          <datalist id="listaColaboradores"></datalist>
-        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Año</label>
-            <select id="fAnio" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Colaborador</label>
+            <input id="fColaborador" list="listaColaboradores" required placeholder="Ej: Carlos Mendoza" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+            <datalist id="listaColaboradores"></datalist>
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Mes</label>
-            <select id="fMes" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Cliente</label>
+            <input id="fCliente" list="listaClientes" required placeholder="Ej: Familia Rojas" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+            <datalist id="listaClientes"></datalist>
           </div>
         </div>
         <div>
@@ -144,9 +144,20 @@
           <select id="fProducto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; P&oacute;liza / Cliente</label>
-          <input id="fPoliza" required placeholder="Ej: POL-2026-0456 / Juan P&eacute;rez" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; P&oacute;liza</label>
+          <input id="fPoliza" required placeholder="Ej: POL-2026-0456" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
         </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Sometimiento</label>
+            <input id="fFechaSometimiento" type="date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Emisión</label>
+            <input id="fFechaEmision" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-400 -mt-2">Si la Fecha de Emisión queda vacía, la venta se guarda pero no se contabiliza en KPIs, desglose ni ranking hasta que la completes (igual que en tu Excel de comisiones).</p>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-500 mb-1">Prima B&aacute;sica Anual (UF)</label>
@@ -227,14 +238,16 @@
       </span>
     </div>
     <div class="overflow-x-auto max-h-96 overflow-y-auto">
-      <table class="w-full text-sm min-w-[980px]">
+      <table class="w-full text-sm min-w-[1220px]">
         <thead class="sticky top-0 bg-white">
           <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
             <th class="py-2 pr-3">Colaborador</th>
-            <th class="py-2 pr-3">Período</th>
+            <th class="py-2 pr-3">Cliente</th>
+            <th class="py-2 pr-3">N° Póliza</th>
+            <th class="py-2 pr-3">F. Sometimiento</th>
+            <th class="py-2 pr-3">F. Emisión</th>
             <th class="py-2 pr-3">Régimen</th>
             <th class="py-2 pr-3">Producto</th>
-            <th class="py-2 pr-3">Póliza / Cliente</th>
             <th class="py-2 pr-3 text-right">P. Básica Anual (UF)</th>
             <th class="py-2 pr-3 text-right">P. Exceso Anual (UF)</th>
             <th class="py-2 text-center">Acción</th>
@@ -297,30 +310,80 @@ const PRODUCTS = [
 const productById = id => PRODUCTS.find(p => p.id === id);
 const productByNombre = n => PRODUCTS.find(p => p.nombre === n);
 
-/* ==================== DATOS DE EJEMPLO (10 transacciones) ==================== */
-let transactions = [
-  { id: uid(), colaborador:"Carlos Mendoza",     anio:2026, mes:3, productoId:"ahorro_familiar",      poliza:"POL-2026-1001 / Fam. Rojas",     primaBasicaAnual:96,  primaExcesoAnual:24 },
-  { id: uid(), colaborador:"Carlos Mendoza",     anio:2026, mes:3, productoId:"seguro_vida",           poliza:"POL-2026-1002 / J. Herrera",     primaBasicaAnual:60,  primaExcesoAnual:0  },
-  { id: uid(), colaborador:"Carlos Mendoza",     anio:2026, mes:3, productoId:"salud_catastrofico",    poliza:"POL-2026-1003 / M. Soto",        primaBasicaAnual:14,  primaExcesoAnual:0  },
-  { id: uid(), colaborador:"Andrea Valenzuela",  anio:2026, mes:3, productoId:"ahorro_universitario",  poliza:"POL-2026-1004 / Fam. Contreras",  primaBasicaAnual:144, primaExcesoAnual:36 },
-  { id: uid(), colaborador:"Andrea Valenzuela",  anio:2026, mes:3, productoId:"seguro_oncologico",     poliza:"POL-2026-1005 / P. Fuentes",      primaBasicaAnual:9,   primaExcesoAnual:0  },
-  { id: uid(), colaborador:"Andrea Valenzuela",  anio:2026, mes:3, productoId:"ap_salud",              poliza:"POL-2026-1006 / R. Araya",        primaBasicaAnual:11,  primaExcesoAnual:0  },
-  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"dominium",              poliza:"POL-2026-1007 / L. Vergara",      primaBasicaAnual:180, primaExcesoAnual:60 },
-  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"temporales",            poliza:"POL-2026-1008 / C. Nuñez",        primaBasicaAnual:48,  primaExcesoAnual:0  },
-  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"salud_esencial",        poliza:"POL-2026-1009 / D. Pizarro",      primaBasicaAnual:18,  primaExcesoAnual:0  },
-  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"vive_ok",               poliza:"POL-2026-1010 / A. Reyes",        primaBasicaAnual:30,  primaExcesoAnual:0  }
-];
-
 function uid(){ return 'tx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9); }
+
+// Año/Mes SIEMPRE se derivan de la Fecha de Emisión (mes en que se paga la comisión),
+// igual que en Historico_Mensual/Dashboard del Excel real: si no hay Fecha de Emisión,
+// la transacción queda registrada pero no se contabiliza (anio/mes = null no calzan con ningún filtro numérico).
+function derivarAnioMes(fechaEmisionISO){
+  if(!fechaEmisionISO) return { anio: null, mes: null };
+  const partes = String(fechaEmisionISO).split('-');
+  if(partes.length !== 3) return { anio: null, mes: null };
+  const anio = Number(partes[0]), mes = Number(partes[1]);
+  if(!anio || !mes || mes < 1 || mes > 12) return { anio: null, mes: null };
+  return { anio, mes };
+}
+
+function construirTransaccion(datos){
+  const { anio, mes } = derivarAnioMes(datos.fechaEmision);
+  return {
+    id: datos.id || uid(),
+    colaborador: datos.colaborador,
+    cliente: datos.cliente,
+    poliza: datos.poliza,
+    productoId: datos.productoId,
+    fechaSometimiento: datos.fechaSometimiento || "",
+    fechaEmision: datos.fechaEmision || "",
+    anio, mes,
+    primaBasicaAnual: Number(datos.primaBasicaAnual) || 0,
+    primaExcesoAnual: Number(datos.primaExcesoAnual) || 0
+  };
+}
+
+/* ==================== DATOS DE EJEMPLO (10 transacciones) ==================== */
+// Nota: la última fila (Gisela Torres / Vive OK) se dejó a propósito con Fecha de Emisión
+// vacía para mostrar cómo el sistema la guarda pero no la contabiliza hasta completarla.
+let transactions = [
+  construirTransaccion({ colaborador:"Virginia Muñoz",  cliente:"Familia Rojas",     productoId:"ahorro_familiar",     poliza:"POL-2026-1001", fechaSometimiento:"2026-03-02", fechaEmision:"2026-03-16", primaBasicaAnual:96,  primaExcesoAnual:24 }),
+  construirTransaccion({ colaborador:"Virginia Muñoz",  cliente:"Jorge Herrera",     productoId:"seguro_vida",         poliza:"POL-2026-1002", fechaSometimiento:"2026-03-04", fechaEmision:"2026-03-18", primaBasicaAnual:60,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Virginia Muñoz",  cliente:"Marcela Soto",      productoId:"salud_catastrofico",  poliza:"POL-2026-1003", fechaSometimiento:"2026-03-06", fechaEmision:"2026-03-20", primaBasicaAnual:14,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Carolina Fernández", cliente:"Familia Contreras", productoId:"ahorro_universitario",poliza:"POL-2026-1004", fechaSometimiento:"2026-03-03", fechaEmision:"2026-03-17", primaBasicaAnual:144, primaExcesoAnual:36 }),
+  construirTransaccion({ colaborador:"Carolina Fernández", cliente:"Pedro Fuentes",     productoId:"seguro_oncologico",   poliza:"POL-2026-1005", fechaSometimiento:"2026-03-05", fechaEmision:"2026-03-19", primaBasicaAnual:9,   primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Carolina Fernández", cliente:"Rosa Araya",        productoId:"ap_salud",            poliza:"POL-2026-1006", fechaSometimiento:"2026-03-07", fechaEmision:"2026-03-21", primaBasicaAnual:11,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Luis Vergara",      productoId:"dominium",            poliza:"POL-2026-1007", fechaSometimiento:"2026-03-08", fechaEmision:"2026-03-22", primaBasicaAnual:180, primaExcesoAnual:60 }),
+  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Camila Nuñez",      productoId:"temporales",          poliza:"POL-2026-1008", fechaSometimiento:"2026-03-09", fechaEmision:"2026-03-23", primaBasicaAnual:48,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Diego Pizarro",     productoId:"salud_esencial",      poliza:"POL-2026-1009", fechaSometimiento:"2026-03-10", fechaEmision:"2026-03-24", primaBasicaAnual:18,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Ana Reyes",         productoId:"vive_ok",             poliza:"POL-2026-1010", fechaSometimiento:"2026-03-25", fechaEmision:"",           primaBasicaAnual:30,  primaExcesoAnual:0  })
+];
 
 /* ==================== ESTADO / FILTROS ==================== */
 let filtros = {
   anio: 2026,
   mes: 3,
   colaborador: "TODOS",
-  valorUF: 39000,
   persistencia: 95
 };
+
+/* ==================== VALOR UF DE CIERRE, GUARDADO POR AÑO/MES ==================== */
+// El valor UF es el de cierre de cada mes, no un único valor global: se guarda una tabla
+// Año+Mes -> Valor UF (igual que la tabla "Valor UF por Mes" del Excel real), editable y
+// persistida al exportar/reimportar. DEFAULT_VALOR_UF solo se usa si un período no tiene valor cargado.
+const DEFAULT_VALOR_UF = 39000;
+let valoresUF = {};
+function claveUF(anio, mes){ return `${anio}-${mes}`; }
+function getValorUF(anio, mes){
+  const v = valoresUF[claveUF(anio, mes)];
+  return (v != null && !isNaN(v)) ? Number(v) : DEFAULT_VALOR_UF;
+}
+function setValorUF(anio, mes, valor){
+  valoresUF[claveUF(anio, mes)] = Number(valor) || 0;
+}
+// Semilla inicial: Enero 2026 a Diciembre 2027, todas partiendo en el valor por defecto (editable/ampliable).
+(function sembrarValoresUF(){
+  for(const anio of [2026, 2027]){
+    for(let mes = 1; mes <= 12; mes++){ setValorUF(anio, mes, DEFAULT_VALOR_UF); }
+  }
+})();
 
 /* ==================== MOTOR DE CÁLCULO ==================== */
 function primaBasicaMensual(t){ return (Number(t.primaBasicaAnual)||0) / 12; }
@@ -379,7 +442,7 @@ function factorPersistencia(pct){
   return 0;
 }
 
-// Calcula el detalle de un colaborador en un año/mes específico.
+// Calcula el detalle de un colaborador en un año/mes específico (de Fecha de Emisión).
 // IMPORTANTE: el tramo del Bono de Venta y su tope de 65 UF se evalúan POR COLABORADOR,
 // nunca sobre una PP ya sumada entre varios colaboradores (evita sobreestimar el bono consolidado).
 function calcularColaboradorMes(colaborador, anio, mes, persistenciaPct){
@@ -405,7 +468,7 @@ function calcularColaboradorMes(colaborador, anio, mes, persistenciaPct){
 
 function colaboradoresConDatos(anio, mes){
   const set = new Set();
-  transactions.forEach(t => { if(Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes)) set.add(t.colaborador); });
+  transactions.forEach(t => { if(t.anio != null && Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes)) set.add(t.colaborador); });
   return Array.from(set).sort((a,b) => a.localeCompare(b, 'es'));
 }
 
@@ -428,6 +491,12 @@ function calcularVista(anio, mes, colaboradorFiltro, persistenciaPct){
 const fmtUF = n => (Number(n)||0).toLocaleString('es-CL', { minimumFractionDigits:2, maximumFractionDigits:2 });
 const fmtCLP = n => "$" + Math.round(Number(n)||0).toLocaleString('es-CL');
 const fmtPct = n => (Number(n)*100).toLocaleString('es-CL', { minimumFractionDigits:1, maximumFractionDigits:1 }) + "%";
+function fmtFecha(iso){
+  if(!iso) return "—";
+  const p = String(iso).split('-');
+  if(p.length !== 3) return iso;
+  return `${p[2]}-${p[1]}-${p[0]}`;
+}
 
 function toast(msg, tipo){
   tipo = tipo || "info";
@@ -443,7 +512,7 @@ function toast(msg, tipo){
 /* ==================== POBLAR SELECTS ==================== */
 function anosDisponibles(){
   const set = new Set([2026, 2027]);
-  transactions.forEach(t => set.add(Number(t.anio)));
+  transactions.forEach(t => { if(t.anio != null) set.add(Number(t.anio)); });
   return Array.from(set).sort((a,b) => a-b);
 }
 
@@ -486,6 +555,12 @@ function poblarDatalistColaboradores(){
   dl.innerHTML = nombres.map(n => `<option value="${escapeHtml(n)}">`).join('');
 }
 
+function poblarDatalistClientes(){
+  const dl = document.getElementById('listaClientes');
+  const nombres = Array.from(new Set(transactions.map(t => t.cliente).filter(Boolean))).sort((a,b) => a.localeCompare(b,'es'));
+  dl.innerHTML = nombres.map(n => `<option value="${escapeHtml(n)}">`).join('');
+}
+
 function poblarSelectProducto(){
   const select = document.getElementById('fProducto');
   select.innerHTML = "";
@@ -523,6 +598,7 @@ function renderAll(){
   document.getElementById('contadorRegistros').textContent = transactions.length;
   poblarSelectColaboradorFiltro();
   poblarDatalistColaboradores();
+  poblarDatalistClientes();
 
   const vista = calcularVista(filtros.anio, filtros.mes, filtros.colaborador, filtros.persistencia);
   renderKPIs(vista);
@@ -533,7 +609,8 @@ function renderAll(){
 
 function renderKPIs(vista){
   const a = vista.agg;
-  document.getElementById('kpiTotalCLP').textContent = fmtCLP(a.total * filtros.valorUF);
+  const valorUF = getValorUF(filtros.anio, filtros.mes);
+  document.getElementById('kpiTotalCLP').textContent = fmtCLP(a.total * valorUF);
   document.getElementById('kpiTotalUF').textContent = fmtUF(a.total) + " UF";
   document.getElementById('kpiPP').textContent = fmtUF(a.pp) + " UF";
   document.getElementById('kpiBonoPersistencia').textContent = fmtUF(a.bonoVenta + a.premioPersistencia) + " UF";
@@ -542,6 +619,7 @@ function renderKPIs(vista){
 
 function renderDesglose(vista){
   const a = vista.agg;
+  const valorUF = getValorUF(filtros.anio, filtros.mes);
   const ctx = vista.modo === "TODOS"
     ? `Consolidado equipo &middot; ${MESES[filtros.mes-1]} ${filtros.anio}`
     : `${escapeHtml(filtros.colaborador)} &middot; ${MESES[filtros.mes-1]} ${filtros.anio}`;
@@ -550,8 +628,8 @@ function renderDesglose(vista){
   const tasa = tasaBono(a.pp);
   const factorPers = factorPersistencia(Number(filtros.persistencia)||0);
   const filas = [
-    { concepto:"Prima de Productividad (PP)", base:"Suma primas Agentes + Salud del mes", tasa:"—", uf:a.pp },
-    { concepto:"Bono de Venta", base:`PP = ${fmtUF(a.pp)} UF (tramo ≤ ${TRAMOS_BONO.find(t=>a.pp<=t.hasta)?.hasta === Infinity ? '∞' : TRAMOS_BONO.find(t=>a.pp<=t.hasta)?.hasta})`, tasa: fmtPct(tasa) + (a.bonoVenta >= TOPE_BONO_VENTA_UF && a.pp*tasa > TOPE_BONO_VENTA_UF ? " (topado 65 UF)" : ""), uf:a.bonoVenta },
+    { concepto:"Prima de Productividad (PP)", base:"Suma primas Agentes + Salud del mes (por Fecha Emisión)", tasa:"—", uf:a.pp },
+    { concepto:"Bono de Venta", base:`PP = ${fmtUF(a.pp)} UF`, tasa: fmtPct(tasa) + (a.bonoVenta >= TOPE_BONO_VENTA_UF && a.pp*tasa > TOPE_BONO_VENTA_UF ? " (topado 65 UF)" : ""), uf:a.bonoVenta },
     { concepto:"Premio por Persistencia (24 meses)", base:`Bono Venta = ${fmtUF(a.bonoVenta)} UF · Persistencia ${filtros.persistencia}%`, tasa: fmtPct(factorPers), uf:a.premioPersistencia },
     { concepto:"Recaudación / Mantención — Agentes y Salud", base:"Prima básica/exceso mensual de pólizas Agentes + Salud", tasa:"según producto", uf:a.recAgentesSalud },
     { concepto:"Recaudación / Mantención — Contrato Tradicional", base:"Prima básica/exceso mensual de pólizas Contrato", tasa:"según producto", uf:a.recContrato }
@@ -563,22 +641,23 @@ function renderDesglose(vista){
       <td class="py-2 pr-3 text-slate-500 text-xs">${f.base}</td>
       <td class="py-2 pr-3 text-slate-500 text-xs">${f.tasa}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.uf)}</td>
-      <td class="py-2 text-right tabular-nums">${fmtCLP(f.uf * filtros.valorUF)}</td>
+      <td class="py-2 text-right tabular-nums">${fmtCLP(f.uf * valorUF)}</td>
     </tr>`).join('') + `
     <tr class="fade-in bg-slate-50 font-bold">
       <td class="py-2 pr-3" colspan="3">Total a pagar</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(a.total)}</td>
-      <td class="py-2 text-right tabular-nums">${fmtCLP(a.total * filtros.valorUF)}</td>
+      <td class="py-2 text-right tabular-nums">${fmtCLP(a.total * valorUF)}</td>
     </tr>`;
 }
 
 function renderRanking(anio, mes, persistenciaPct){
-  document.getElementById('rankingContexto').textContent = `${MESES[mes-1]} ${anio}`;
+  document.getElementById('rankingContexto').textContent = `${MESES[mes-1]} ${anio} · UF cierre: ${fmtUF(getValorUF(anio,mes))}`;
+  const valorUF = getValorUF(anio, mes);
   const colaboradores = colaboradoresConDatos(anio, mes);
   const filas = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct)).sort((x,y) => y.total - x.total);
   const tbody = document.getElementById('tablaRanking');
   if(filas.length === 0){
-    tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 text-sm">Sin transacciones para ${MESES[mes-1]} ${anio}.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 text-sm">Sin transacciones con Fecha de Emisión en ${MESES[mes-1]} ${anio}.</td></tr>`;
     return;
   }
   tbody.innerHTML = filas.map((f, i) => `
@@ -590,27 +669,32 @@ function renderRanking(anio, mes, persistenciaPct){
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.premioPersistencia)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.recaudacion)}</td>
       <td class="py-2 pr-3 text-right tabular-nums font-semibold">${fmtUF(f.total)}</td>
-      <td class="py-2 text-right tabular-nums">${fmtCLP(f.total * filtros.valorUF)}</td>
+      <td class="py-2 text-right tabular-nums">${fmtCLP(f.total * valorUF)}</td>
     </tr>`).join('');
 }
 
 function renderHistorial(){
   const tbody = document.getElementById('tablaHistorial');
   if(transactions.length === 0){
-    tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 text-sm">No hay transacciones cargadas. Agrega una con el formulario o carga un Excel.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-slate-400 text-sm">No hay transacciones cargadas. Agrega una con el formulario o carga un Excel.</td></tr>`;
     return;
   }
-  const ordenado = [...transactions].sort((a,b) => (b.anio - a.anio) || (b.mes - a.mes) || a.colaborador.localeCompare(b.colaborador,'es'));
+  const ordenado = [...transactions].sort((a,b) => (b.fechaEmision||b.fechaSometimiento||"").localeCompare(a.fechaEmision||a.fechaSometimiento||"") || a.colaborador.localeCompare(b.colaborador,'es'));
   tbody.innerHTML = ordenado.map(t => {
     const p = productById(t.productoId);
     const regimen = p ? p.regimen : "—";
+    const pendiente = !t.fechaEmision;
     return `
     <tr class="fade-in hover:bg-slate-50">
       <td class="py-2 pr-3 font-medium text-slate-700">${escapeHtml(t.colaborador)}</td>
-      <td class="py-2 pr-3 text-slate-500">${MESES[t.mes-1] || t.mes} ${t.anio}</td>
+      <td class="py-2 pr-3 text-slate-600">${escapeHtml(t.cliente||'')}</td>
+      <td class="py-2 pr-3 text-slate-500">${escapeHtml(t.poliza||'')}</td>
+      <td class="py-2 pr-3 text-slate-500">${fmtFecha(t.fechaSometimiento)}</td>
+      <td class="py-2 pr-3">
+        ${pendiente ? '<span class="text-xs font-medium px-2 py-0.5 rounded-full badge-pendiente"><i class="fa-solid fa-clock mr-1"></i>Pendiente</span>' : `<span class="text-slate-500">${fmtFecha(t.fechaEmision)}</span>`}
+      </td>
       <td class="py-2 pr-3"><span class="text-xs font-medium px-2 py-0.5 rounded-full ${REGIMEN_BADGE[regimen]||''}">${REGIMEN_LABEL[regimen]||regimen}</span></td>
       <td class="py-2 pr-3">${p ? escapeHtml(p.nombre) : '<span class="text-red-500">Producto desconocido</span>'}</td>
-      <td class="py-2 pr-3 text-slate-500">${escapeHtml(t.poliza||'')}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(t.primaBasicaAnual)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${t.primaExcesoAnual ? fmtUF(t.primaExcesoAnual) : '—'}</td>
       <td class="py-2 text-center">
@@ -632,17 +716,24 @@ function renderHistorial(){
 }
 
 /* ==================== EVENTOS: FILTROS ==================== */
+function sincronizarInputValorUF(){
+  document.getElementById('filtroValorUF').value = getValorUF(filtros.anio, filtros.mes);
+}
+
 function initFiltros(){
   poblarSelectAnio(document.getElementById('filtroAnio'), filtros.anio);
   poblarSelectMes(document.getElementById('filtroMes'), filtros.mes);
   poblarSelectColaboradorFiltro();
-  document.getElementById('filtroValorUF').value = filtros.valorUF;
+  sincronizarInputValorUF();
   document.getElementById('filtroPersistencia').value = filtros.persistencia;
 
-  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); renderAll(); });
-  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); renderAll(); });
+  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); sincronizarInputValorUF(); renderAll(); });
+  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); sincronizarInputValorUF(); renderAll(); });
   document.getElementById('filtroColaborador').addEventListener('change', e => { filtros.colaborador = e.target.value; renderAll(); });
-  document.getElementById('filtroValorUF').addEventListener('input', e => { filtros.valorUF = Number(e.target.value) || 0; renderAll(); });
+  document.getElementById('filtroValorUF').addEventListener('input', e => {
+    setValorUF(filtros.anio, filtros.mes, e.target.value);
+    renderAll();
+  });
   document.getElementById('filtroPersistencia').addEventListener('input', e => {
     let v = Number(e.target.value); if(isNaN(v)) v = 0; v = Math.max(0, Math.min(100, v));
     filtros.persistencia = v; renderAll();
@@ -651,10 +742,7 @@ function initFiltros(){
 
 /* ==================== EVENTOS: FORMULARIO ==================== */
 function initFormulario(){
-  poblarSelectAnio(document.getElementById('fAnio'), filtros.anio);
-  poblarSelectMes(document.getElementById('fMes'), filtros.mes);
   poblarSelectProducto();
-
   document.getElementById('fProducto').addEventListener('change', actualizarVisibilidadExceso);
 
   document.getElementById('formTransaccion').addEventListener('submit', e => {
@@ -663,24 +751,25 @@ function initFormulario(){
     errorEl.classList.add('hidden');
     try {
       const colaborador = document.getElementById('fColaborador').value.trim();
-      const anio = Number(document.getElementById('fAnio').value);
-      const mes = Number(document.getElementById('fMes').value);
+      const cliente = document.getElementById('fCliente').value.trim();
       const productoId = document.getElementById('fProducto').value;
       const poliza = document.getElementById('fPoliza').value.trim();
+      const fechaSometimiento = document.getElementById('fFechaSometimiento').value;
+      const fechaEmision = document.getElementById('fFechaEmision').value;
       const primaBasicaAnual = Number(document.getElementById('fPrimaBasica').value);
       const p = productById(productoId);
       const primaExcesoAnual = (p && p.usaExceso) ? (Number(document.getElementById('fPrimaExceso').value) || 0) : 0;
 
       if(!colaborador) throw new Error("Ingresa el nombre del colaborador.");
-      if(!poliza) throw new Error("Ingresa el N° de póliza o cliente.");
+      if(!cliente) throw new Error("Ingresa el nombre del cliente.");
+      if(!poliza) throw new Error("Ingresa el N° de póliza.");
       if(!p) throw new Error("Selecciona un producto válido.");
+      if(!fechaSometimiento) throw new Error("Ingresa la Fecha de Sometimiento.");
       if(isNaN(primaBasicaAnual) || primaBasicaAnual <= 0) throw new Error("La Prima Básica Anual debe ser un número mayor a 0.");
 
-      transactions.push({ id: uid(), colaborador, anio, mes, productoId, poliza, primaBasicaAnual, primaExcesoAnual });
-      toast(`Transacción agregada para ${escapeHtml(colaborador)}.`, "success");
+      transactions.push(construirTransaccion({ colaborador, cliente, productoId, poliza, fechaSometimiento, fechaEmision, primaBasicaAnual, primaExcesoAnual }));
+      toast(`Transacción agregada para ${escapeHtml(colaborador)}.` + (!fechaEmision ? " Sin Fecha de Emisión: quedará como pendiente en el historial." : ""), "success");
       document.getElementById('formTransaccion').reset();
-      poblarSelectAnio(document.getElementById('fAnio'), filtros.anio);
-      poblarSelectMes(document.getElementById('fMes'), filtros.mes);
       poblarSelectProducto();
       renderAll();
     } catch(err){
@@ -693,16 +782,38 @@ function initFormulario(){
 /* ==================== CARGA DE EXCEL (SheetJS) ==================== */
 const ENCABEZADOS_ESPERADOS = {
   colaborador: ["colaborador","agente","nombre colaborador"],
-  anio: ["año","ano","year","anio"],
-  mes: ["mes","month"],
+  cliente: ["cliente","nombre cliente"],
   producto: ["producto","product"],
-  poliza: ["n° póliza/cliente","n° poliza/cliente","poliza","póliza","n° póliza","cliente","poliza/cliente"],
+  poliza: ["n° póliza","n° poliza","poliza","póliza","n° póliza/cliente","n° poliza/cliente"],
+  fechaSometimiento: ["fecha sometimiento","fecha de sometimiento","f. sometimiento"],
+  fechaEmision: ["fecha emisión","fecha emision","fecha de emisión","fecha de emision","f. emisión","f. emision"],
   primaBasicaAnual: ["prima básica anual (uf)","prima basica anual (uf)","prima básica anual","prima basica anual","prima básica (uf)","prima basica"],
   primaExcesoAnual: ["prima exceso anual (uf)","prima exceso anual","prima exceso (uf)","prima exceso"]
 };
 
 function normalizarEncabezado(str){
   return String(str||"").trim().toLowerCase();
+}
+
+function normalizarFechaISO(valor){
+  try {
+    if(valor === undefined || valor === null || valor === "") return "";
+    if(valor instanceof Date && !isNaN(valor)){
+      const y = valor.getFullYear(), m = String(valor.getMonth()+1).padStart(2,'0'), d = String(valor.getDate()).padStart(2,'0');
+      return `${y}-${m}-${d}`;
+    }
+    if(typeof valor === "number" && window.XLSX && XLSX.SSF && XLSX.SSF.parse_date_code){
+      const pd = XLSX.SSF.parse_date_code(valor);
+      if(pd) return `${String(pd.y).padStart(4,'0')}-${String(pd.m).padStart(2,'0')}-${String(pd.d).padStart(2,'0')}`;
+      return "";
+    }
+    const str = String(valor).trim();
+    let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    return "";
+  } catch(e){ console.error("Error normalizando fecha", valor, e); return ""; }
 }
 
 function mapearFila(fila){
@@ -714,23 +825,45 @@ function mapearFila(fila){
     return undefined;
   };
   const colaborador = String(buscar(ENCABEZADOS_ESPERADOS.colaborador) ?? "").trim();
-  const anio = Number(buscar(ENCABEZADOS_ESPERADOS.anio));
-  let mes = buscar(ENCABEZADOS_ESPERADOS.mes);
+  const cliente = String(buscar(ENCABEZADOS_ESPERADOS.cliente) ?? "").trim();
+  const nombreProducto = String(buscar(ENCABEZADOS_ESPERADOS.producto) ?? "").trim();
+  const producto = productByNombre(nombreProducto) || PRODUCTS.find(p => p.id === nombreProducto);
+  const poliza = String(buscar(ENCABEZADOS_ESPERADOS.poliza) ?? "").trim();
+  const fechaSometimiento = normalizarFechaISO(buscar(ENCABEZADOS_ESPERADOS.fechaSometimiento));
+  const fechaEmision = normalizarFechaISO(buscar(ENCABEZADOS_ESPERADOS.fechaEmision));
+  const primaBasicaAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaBasicaAnual));
+  const primaExcesoAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaExcesoAnual)) || 0;
+
+  if(!colaborador || !producto || isNaN(primaBasicaAnual)) return null;
+
+  return construirTransaccion({ colaborador, cliente, productoId: producto.id, poliza, fechaSometimiento, fechaEmision, primaBasicaAnual, primaExcesoAnual });
+}
+
+const ENCABEZADOS_UF = {
+  anio: ["año","ano","year","anio"],
+  mes: ["mes","month"],
+  valor: ["valor uf","valor uf ($)","valor uf cierre","valor uf de cierre ($)","valor uf de cierre del mes ($)"]
+};
+
+function mapearFilaUF(fila){
+  const claves = Object.keys(fila);
+  const buscar = (opciones) => {
+    for(const clave of claves){
+      if(opciones.includes(normalizarEncabezado(clave))) return fila[clave];
+    }
+    return undefined;
+  };
+  const anio = Number(buscar(ENCABEZADOS_UF.anio));
+  let mes = buscar(ENCABEZADOS_UF.mes);
   if(typeof mes === "string"){
     const idx = MESES.findIndex(m => m.toLowerCase() === mes.trim().toLowerCase());
     mes = idx >= 0 ? idx+1 : Number(mes);
   } else {
     mes = Number(mes);
   }
-  const nombreProducto = String(buscar(ENCABEZADOS_ESPERADOS.producto) ?? "").trim();
-  const producto = productByNombre(nombreProducto) || PRODUCTS.find(p => p.id === nombreProducto);
-  const poliza = String(buscar(ENCABEZADOS_ESPERADOS.poliza) ?? "").trim();
-  const primaBasicaAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaBasicaAnual));
-  const primaExcesoAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaExcesoAnual)) || 0;
-
-  if(!colaborador || !anio || !mes || !producto || isNaN(primaBasicaAnual)) return null;
-
-  return { id: uid(), colaborador, anio, mes, productoId: producto.id, poliza, primaBasicaAnual, primaExcesoAnual };
+  const valor = Number(buscar(ENCABEZADOS_UF.valor));
+  if(!anio || !mes || mes < 1 || mes > 12 || isNaN(valor)) return null;
+  return { anio, mes, valor };
 }
 
 function initCargaExcel(){
@@ -745,7 +878,7 @@ function initCargaExcel(){
     reader.onload = (evt) => {
       try {
         const data = new Uint8Array(evt.target.result);
-        const wb = XLSX.read(data, { type: "array" });
+        const wb = XLSX.read(data, { type: "array", cellDates: true });
         const nombreHoja = wb.SheetNames.includes("Registro_Ventas") ? "Registro_Ventas" : wb.SheetNames[0];
         const ws = wb.Sheets[nombreHoja];
         if(!ws) throw new Error("El archivo no contiene hojas legibles.");
@@ -759,13 +892,28 @@ function initCargaExcel(){
           if(tx) nuevas.push(tx); else descartadas++;
         });
 
-        if(nuevas.length === 0) throw new Error("No se reconoció ninguna fila válida. Verifica los encabezados: Colaborador, Año, Mes, Producto, N° Póliza/Cliente, Prima Básica Anual (UF), Prima Exceso Anual (UF).");
+        if(nuevas.length === 0) throw new Error("No se reconoció ninguna fila válida. Verifica los encabezados: Colaborador, Cliente, Producto, N° Póliza, Fecha Sometimiento, Fecha Emisión, Prima Básica Anual (UF), Prima Exceso Anual (UF).");
 
         transactions = nuevas;
+
+        // Hoja de Valor UF por mes: si el archivo la trae, reemplaza la tabla actual (dato de cierre real del usuario).
+        const nombreHojaUF = wb.SheetNames.find(n => normalizarEncabezado(n).replace(/_/g,' ').includes("valor uf"));
+        let mesesUFCargados = 0;
+        if(nombreHojaUF){
+          const filasUF = XLSX.utils.sheet_to_json(wb.Sheets[nombreHojaUF], { defval: "" });
+          const nuevaTablaUF = {};
+          filasUF.forEach(fila => {
+            const r = mapearFilaUF(fila);
+            if(r) nuevaTablaUF[claveUF(r.anio, r.mes)] = r.valor;
+          });
+          mesesUFCargados = Object.keys(nuevaTablaUF).length;
+          if(mesesUFCargados > 0) valoresUF = nuevaTablaUF;
+        }
+
+        sincronizarInputValorUF();
         renderAll();
-        poblarSelectAnio(document.getElementById('fAnio'), filtros.anio);
-        poblarSelectMes(document.getElementById('fMes'), filtros.mes);
-        toast(`Se cargaron ${nuevas.length} transacciones desde "${file.name}"${descartadas ? ` (${descartadas} filas descartadas por datos incompletos)` : ""}.`, "success");
+        const sinEmision = nuevas.filter(t => !t.fechaEmision).length;
+        toast(`Se cargaron ${nuevas.length} transacciones desde "${file.name}"${descartadas ? ` (${descartadas} filas descartadas por datos incompletos)` : ""}${sinEmision ? ` · ${sinEmision} sin Fecha de Emisión quedaron como pendientes` : ""}${mesesUFCargados ? ` · ${mesesUFCargados} valores de UF mensual cargados` : ""}.`, "success");
       } catch(err){
         console.error("Error al procesar el Excel", err);
         toast("Error al leer el Excel: " + (err.message || "formato no reconocido."), "error");
@@ -791,11 +939,14 @@ function initGuardarExcel(){
         const p = productById(t.productoId);
         return {
           "Colaborador": t.colaborador,
-          "Año": t.anio,
-          "Mes": MESES[t.mes-1] || t.mes,
+          "Cliente": t.cliente || "",
+          "N° Póliza": t.poliza,
+          "Fecha Sometimiento": t.fechaSometimiento ? new Date(t.fechaSometimiento + "T00:00:00") : "",
+          "Fecha Emisión": t.fechaEmision ? new Date(t.fechaEmision + "T00:00:00") : "",
+          "Año": t.anio || "",
+          "Mes": t.mes ? MESES[t.mes-1] : "",
           "Régimen": p ? REGIMEN_LABEL[p.regimen] : "",
           "Producto": p ? p.nombre : t.productoId,
-          "N° Póliza/Cliente": t.poliza,
           "Prima Básica Anual (UF)": Number(t.primaBasicaAnual) || 0,
           "Prima Exceso Anual (UF)": Number(t.primaExcesoAnual) || 0
         };
@@ -803,6 +954,7 @@ function initGuardarExcel(){
       const wsRegistro = XLSX.utils.json_to_sheet(filasRegistro);
       XLSX.utils.book_append_sheet(wb, wsRegistro, "Registro_Ventas");
 
+      const valorUFActual = getValorUF(filtros.anio, filtros.mes);
       const colaboradores = colaboradoresConDatos(filtros.anio, filtros.mes);
       const filasResumen = colaboradores
         .map(c => calcularColaboradorMes(c, filtros.anio, filtros.mes, filtros.persistencia))
@@ -814,13 +966,21 @@ function initGuardarExcel(){
           "Premio Persistencia (UF)": Number(d.premioPersistencia.toFixed(2)),
           "Recaudación (UF)": Number(d.recaudacion.toFixed(2)),
           "Total (UF)": Number(d.total.toFixed(2)),
-          "Total (CLP aprox)": Math.round(d.total * filtros.valorUF)
+          "Total (CLP aprox)": Math.round(d.total * valorUFActual)
         }));
-      const wsResumen = XLSX.utils.json_to_sheet(filasResumen.length ? filasResumen : [{ "Aviso": `Sin transacciones para ${MESES[filtros.mes-1]} ${filtros.anio}` }]);
+      const wsResumen = XLSX.utils.json_to_sheet(filasResumen.length ? filasResumen : [{ "Aviso": `Sin transacciones con Fecha de Emisión en ${MESES[filtros.mes-1]} ${filtros.anio}` }]);
       XLSX.utils.book_append_sheet(wb, wsResumen, `Resumen_${MESES[filtros.mes-1]}_${filtros.anio}`);
 
+      // Tabla de Valor UF de cierre por mes (persistida completa, no solo el período filtrado).
+      const filasUF = Object.keys(valoresUF)
+        .map(clave => { const [anio, mes] = clave.split('-').map(Number); return { anio, mes, valor: valoresUF[clave] }; })
+        .sort((a,b) => (a.anio - b.anio) || (a.mes - b.mes))
+        .map(r => ({ "Año": r.anio, "Mes": MESES[r.mes-1], "Valor UF de cierre ($)": Number(r.valor) || 0 }));
+      const wsValorUF = XLSX.utils.json_to_sheet(filasUF);
+      XLSX.utils.book_append_sheet(wb, wsValorUF, "Valor_UF_Mensual");
+
       const wsParametros = XLSX.utils.json_to_sheet([{
-        "Valor UF de cierre ($)": filtros.valorUF,
+        "Valor UF de cierre del mes filtrado ($)": valorUFActual,
         "Persistencia % del agente": filtros.persistencia,
         "Año filtro": filtros.anio,
         "Mes filtro": MESES[filtros.mes-1],
