@@ -36,7 +36,10 @@
         <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
       </div>
       <div>
-        <h1 class="text-lg sm:text-xl font-bold leading-tight">Calculadora de Comisiones</h1>
+        <h1 class="text-lg sm:text-xl font-bold leading-tight">
+          Calculadora de Comisiones
+          <span id="appVersionBadge" class="align-middle ml-1 text-[10px] font-semibold bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded"></span>
+        </h1>
         <p class="text-xs text-slate-400 flex items-center gap-1.5">
           <span id="estadoDot" class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
           <span id="estadoTexto">Datos de ejemplo cargados &middot; <span id="totalRegistrosHeader">0</span> transacciones</span>
@@ -243,9 +246,24 @@
   </div>
 
   <footer class="text-center text-xs text-slate-400 py-4">
-    Calculadora de Comisiones &middot; cálculos en memoria, datos persistidos en el Excel que t&uacute; cargues o descargues.
+    Calculadora de Comisiones <span id="appVersionFooter"></span> &middot; cálculos en memoria, datos persistidos en el Excel que t&uacute; cargues o descargues.
+    <span id="appVigenciaFooter"></span>
   </footer>
 </main>
+
+<!-- ==================== PANTALLA: VERSIÓN EXPIRADA ==================== -->
+<div id="pantallaExpirada" class="hidden fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-center">
+    <div class="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+      <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+    </div>
+    <h2 class="text-lg font-bold text-slate-800 mb-2">Versión vencida</h2>
+    <p class="text-sm text-slate-500">
+      Esta versión (<span id="expiradaVersionTexto"></span>) de la Calculadora de Comisiones venció el <span id="expiradaFechaTexto"></span>.
+      Contacta al administrador para obtener la versión vigente.
+    </p>
+  </div>
+</div>
 
 <!-- ==================== MODAL: NUEVA / EDITAR TRANSACCION ==================== -->
 <div id="modalTransaccion" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
@@ -337,6 +355,46 @@
 <script>
 (function(){
 "use strict";
+
+/* ==================== VERSIÓN Y VIGENCIA ====================
+   Aviso: esto NO es un control de licencia real (el archivo corre 100% en el navegador
+   del usuario, sin servidor que valide nada) - es solo un aviso de vigencia basado en el
+   reloj del propio computador, pensado para avisar cuándo toca pedir una versión nueva,
+   no como medida de seguridad contra alguien que decida cambiar la fecha de su equipo. */
+const APP_VERSION = "V1.0";
+const FECHA_LANZAMIENTO_VERSION = "2026-08-25"; // fecha en que se generó esta versión
+const DIAS_VIGENCIA_VERSION = 45;
+
+function fechaExpiracionVersion(){
+  const d = new Date(FECHA_LANZAMIENTO_VERSION + "T00:00:00");
+  d.setDate(d.getDate() + DIAS_VIGENCIA_VERSION);
+  return d;
+}
+
+function versionExpirada(){
+  return new Date() > fechaExpiracionVersion();
+}
+
+function fmtFechaLarga(d){
+  return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function mostrarVersionYVigencia(){
+  const exp = fechaExpiracionVersion();
+  document.getElementById('appVersionBadge').textContent = APP_VERSION;
+  document.getElementById('appVersionFooter').textContent = APP_VERSION;
+  document.getElementById('appVigenciaFooter').textContent = ` · Vigente hasta el ${fmtFechaLarga(exp)}.`;
+}
+
+function verificarVigenciaVersion(){
+  if(!versionExpirada()) return true;
+  document.getElementById('expiradaVersionTexto').textContent = APP_VERSION;
+  document.getElementById('expiradaFechaTexto').textContent = fmtFechaLarga(fechaExpiracionVersion());
+  document.getElementById('pantallaExpirada').classList.remove('hidden');
+  document.querySelector('header').classList.add('hidden');
+  document.querySelector('main').classList.add('hidden');
+  return false;
+}
 
 /* ==================== CATÁLOGO DE PRODUCTOS Y REGLAS ==================== */
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -1255,6 +1313,9 @@ function initVistas(){
 
 /* ==================== INIT ==================== */
 document.addEventListener('DOMContentLoaded', () => {
+  mostrarVersionYVigencia();
+  if(!verificarVigenciaVersion()) return; // versión vencida: no se inicializa el resto de la app
+
   initFiltros();
   initFormulario();
   initModalValorUF();
