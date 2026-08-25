@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Liquidador de Comisiones de Seguros</title>
+<title>Calculadora de Comisiones</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -32,7 +32,7 @@
         <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
       </div>
       <div>
-        <h1 class="text-lg sm:text-xl font-bold leading-tight">Liquidador de Comisiones de Seguros</h1>
+        <h1 class="text-lg sm:text-xl font-bold leading-tight">Calculadora de Comisiones</h1>
         <p class="text-xs text-slate-400 flex items-center gap-1.5">
           <span id="estadoDot" class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
           <span id="estadoTexto">Datos de ejemplo cargados &middot; <span id="totalRegistrosHeader">0</span> transacciones</span>
@@ -41,6 +41,9 @@
     </div>
     <div class="flex items-center gap-2">
       <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
+      <button id="btnNuevaTransaccion" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition text-sm font-medium px-3.5 py-2 rounded-lg">
+        <i class="fa-solid fa-circle-plus"></i> <span class="hidden sm:inline">Nueva transacción</span>
+      </button>
       <button id="btnCargarExcel" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 transition text-sm font-medium px-3.5 py-2 rounded-lg">
         <i class="fa-solid fa-upload"></i> <span class="hidden sm:inline">Cargar Excel</span>
       </button>
@@ -74,8 +77,12 @@
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">Valor UF de cierre del mes ($)</label>
-        <input id="filtroValorUF" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-        <p class="text-[11px] text-slate-400 mt-1">Se guarda un valor por cada Año/Mes — cambia de período arriba para ver o editar el suyo.</p>
+        <input id="filtroValorUF" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-slate-50 disabled:text-slate-400">
+        <p id="filtroValorUFAviso" class="text-[11px] text-amber-600 font-medium mt-1 hidden">
+          <i class="fa-solid fa-triangle-exclamation"></i> Sin dato para este mes.
+          <button id="btnAbrirUFdesdeAviso" type="button" class="underline hover:no-underline">Ingresarlo</button>
+        </p>
+        <p id="filtroValorUFNota" class="text-[11px] text-slate-400 mt-1">Se guarda un valor por cada Año/Mes — cambia de período arriba para ver o editar el suyo.</p>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">Persistencia % del agente</label>
@@ -92,6 +99,9 @@
         <i class="fa-solid fa-sack-dollar text-indigo-500"></i>
       </div>
       <p id="kpiTotalCLP" class="text-2xl font-bold text-slate-900 mt-2">$0</p>
+      <button id="btnFaltaUFKpi" type="button" class="hidden text-amber-600 text-sm font-semibold mt-1 hover:underline">
+        <i class="fa-solid fa-triangle-exclamation"></i> Ingresar Valor UF de este mes
+      </button>
       <p id="kpiTotalUF" class="text-xs text-slate-500 mt-0.5">0,00 UF</p>
     </div>
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
@@ -120,85 +130,29 @@
     </div>
   </section>
 
-  <div class="grid grid-cols-1 xl:grid-cols-5 gap-5">
-    <!-- ==================== FORMULARIO NUEVA TRANSACCION ==================== -->
-    <section class="xl:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-fit">
-      <div class="flex items-center gap-2 mb-3 text-slate-500 text-xs font-semibold uppercase tracking-wide">
-        <i class="fa-solid fa-circle-plus"></i> Nueva transacción / póliza
+  <!-- ==================== DESGLOSE CONCEPTO POR CONCEPTO ==================== -->
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+        <i class="fa-solid fa-list-check"></i> Desglose concepto por concepto
       </div>
-      <form id="formTransaccion" class="space-y-3">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Colaborador</label>
-            <input id="fColaborador" list="listaColaboradores" required placeholder="Ej: Carlos Mendoza" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-            <datalist id="listaColaboradores"></datalist>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Cliente</label>
-            <input id="fCliente" list="listaClientes" required placeholder="Ej: Familia Rojas" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-            <datalist id="listaClientes"></datalist>
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">Producto</label>
-          <select id="fProducto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; P&oacute;liza</label>
-          <input id="fPoliza" required placeholder="Ej: POL-2026-0456" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Sometimiento</label>
-            <input id="fFechaSometimiento" type="date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Emisión</label>
-            <input id="fFechaEmision" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-          </div>
-        </div>
-        <p class="text-[11px] text-slate-400 -mt-2">Si la Fecha de Emisión queda vacía, la venta se guarda pero no se contabiliza en KPIs, desglose ni ranking hasta que la completes (igual que en tu Excel de comisiones).</p>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Prima B&aacute;sica Anual (UF)</label>
-            <input id="fPrimaBasica" type="number" step="0.01" min="0" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-          </div>
-          <div id="wrapExceso">
-            <label class="block text-xs font-medium text-slate-500 mb-1">Prima Exceso Anual (UF)</label>
-            <input id="fPrimaExceso" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-          </div>
-        </div>
-        <p id="formError" class="text-xs text-red-600 hidden"></p>
-        <button type="submit" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
-          <i class="fa-solid fa-plus"></i> Agregar transacción
-        </button>
-      </form>
-    </section>
-
-    <!-- ==================== DESGLOSE CONCEPTO POR CONCEPTO ==================== -->
-    <section class="xl:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
-          <i class="fa-solid fa-list-check"></i> Desglose concepto por concepto
-        </div>
-        <span id="desgloseContexto" class="text-xs text-slate-400"></span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
-              <th class="py-2 pr-3">Concepto</th>
-              <th class="py-2 pr-3">Base</th>
-              <th class="py-2 pr-3">Tasa</th>
-              <th class="py-2 pr-3 text-right">Monto (UF)</th>
-              <th class="py-2 text-right">Monto (CLP)</th>
-            </tr>
-          </thead>
-          <tbody id="tablaDesglose" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+      <span id="desgloseContexto" class="text-xs text-slate-400"></span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
+            <th class="py-2 pr-3">Concepto</th>
+            <th class="py-2 pr-3">Base</th>
+            <th class="py-2 pr-3">Tasa</th>
+            <th class="py-2 pr-3 text-right">Monto (UF)</th>
+            <th class="py-2 text-right">Monto (CLP)</th>
+          </tr>
+        </thead>
+        <tbody id="tablaDesglose" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+  </section>
 
   <!-- ==================== RANKING COMPARATIVO ==================== -->
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
@@ -250,7 +204,7 @@
             <th class="py-2 pr-3">Producto</th>
             <th class="py-2 pr-3 text-right">P. Básica Anual (UF)</th>
             <th class="py-2 pr-3 text-right">P. Exceso Anual (UF)</th>
-            <th class="py-2 text-center">Acción</th>
+            <th class="py-2 text-center">Acciones</th>
           </tr>
         </thead>
         <tbody id="tablaHistorial" class="divide-y divide-slate-100"></tbody>
@@ -259,9 +213,96 @@
   </section>
 
   <footer class="text-center text-xs text-slate-400 py-4">
-    Liquidador de Comisiones de Seguros &middot; cálculos en memoria, datos persistidos en el Excel que t&uacute; cargues o descargues.
+    Calculadora de Comisiones &middot; cálculos en memoria, datos persistidos en el Excel que t&uacute; cargues o descargues.
   </footer>
 </main>
+
+<!-- ==================== MODAL: NUEVA / EDITAR TRANSACCION ==================== -->
+<div id="modalTransaccion" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 sticky top-0 bg-white rounded-t-xl">
+      <h2 id="modalTransaccionTitulo" class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-circle-plus text-indigo-600"></i> Nueva transacción / póliza
+      </h2>
+      <button id="btnCerrarModalTransaccion" type="button" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-md hover:bg-slate-100">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form id="formTransaccion" class="p-5 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Colaborador</label>
+          <input id="fColaborador" list="listaColaboradores" required placeholder="Ej: Virginia Muñoz" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          <datalist id="listaColaboradores"></datalist>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Cliente</label>
+          <input id="fCliente" list="listaClientes" required placeholder="Ej: Familia Rojas" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          <datalist id="listaClientes"></datalist>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Producto</label>
+        <select id="fProducto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; P&oacute;liza</label>
+        <input id="fPoliza" required placeholder="Ej: POL-2026-0456" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Sometimiento</label>
+          <input id="fFechaSometimiento" type="date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Emisión</label>
+          <input id="fFechaEmision" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+      </div>
+      <p class="text-[11px] text-slate-400 -mt-2">Si la Fecha de Emisión queda vacía, la venta se guarda pero no se contabiliza en KPIs, desglose ni ranking hasta que la completes (igual que en tu Excel de comisiones).</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Prima B&aacute;sica Anual (UF)</label>
+          <input id="fPrimaBasica" type="number" step="0.01" min="0" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+        <div id="wrapExceso">
+          <label class="block text-xs font-medium text-slate-500 mb-1">Prima Exceso Anual (UF)</label>
+          <input id="fPrimaExceso" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+      </div>
+      <p id="formError" class="text-xs text-red-600 hidden"></p>
+      <button type="submit" id="btnGuardarTransaccion" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
+        <i class="fa-solid fa-plus"></i> <span>Agregar transacción</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== MODAL: VALOR UF DE CIERRE ==================== -->
+<div id="modalValorUF" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-sm">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+      <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-coins text-amber-500"></i> Valor UF de cierre
+      </h2>
+      <button id="btnCerrarModalUF" type="button" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-md hover:bg-slate-100">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="p-5 space-y-3">
+      <p id="modalUFContexto" class="text-sm text-slate-600"></p>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Valor UF de cierre ($)</label>
+        <input id="modalUFInput" type="number" step="0.01" min="0" placeholder="Ej: 40873.77" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+      </div>
+      <p id="modalUFError" class="text-xs text-red-600 hidden"></p>
+      <div class="flex gap-2 pt-1">
+        <button id="btnCancelarUF" type="button" class="flex-1 border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 rounded-lg">Ahora no</button>
+        <button id="btnGuardarUF" type="button" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -365,25 +406,27 @@ let filtros = {
 };
 
 /* ==================== VALOR UF DE CIERRE, GUARDADO POR AÑO/MES ==================== */
-// El valor UF es el de cierre de cada mes, no un único valor global: se guarda una tabla
-// Año+Mes -> Valor UF (igual que la tabla "Valor UF por Mes" del Excel real), editable y
-// persistida al exportar/reimportar. DEFAULT_VALOR_UF solo se usa si un período no tiene valor cargado.
-const DEFAULT_VALOR_UF = 39000;
+// El valor UF es el de cierre de cada mes, no un único valor global ni un valor por defecto:
+// se guarda solo lo que el usuario realmente ingresó, en una tabla Año+Mes -> Valor UF (igual
+// que la tabla "Valor UF por Mes" del Excel real). Si un período no tiene valor cargado, NO se
+// asume nada — se le pide al usuario apenas selecciona ese período (ver abrirModalValorUF).
 let valoresUF = {};
 function claveUF(anio, mes){ return `${anio}-${mes}`; }
-function getValorUF(anio, mes){
+function tieneValorUF(anio, mes){
   const v = valoresUF[claveUF(anio, mes)];
-  return (v != null && !isNaN(v)) ? Number(v) : DEFAULT_VALOR_UF;
+  return v != null && !isNaN(v) && v > 0;
+}
+function getValorUF(anio, mes){
+  return tieneValorUF(anio, mes) ? Number(valoresUF[claveUF(anio, mes)]) : null;
 }
 function setValorUF(anio, mes, valor){
-  valoresUF[claveUF(anio, mes)] = Number(valor) || 0;
+  const v = Number(valor);
+  if(!v || v <= 0){ delete valoresUF[claveUF(anio, mes)]; return; }
+  valoresUF[claveUF(anio, mes)] = v;
 }
-// Semilla inicial: Enero 2026 a Diciembre 2027, todas partiendo en el valor por defecto (editable/ampliable).
-(function sembrarValoresUF(){
-  for(const anio of [2026, 2027]){
-    for(let mes = 1; mes <= 12; mes++){ setValorUF(anio, mes, DEFAULT_VALOR_UF); }
-  }
-})();
+// Ejemplo real ya conocido por el usuario: Agosto 2026 = 40.873,77. Septiembre 2026 y el resto
+// de los períodos quedan sin dato a propósito, para demostrar que la app los pide al usarlos.
+setValorUF(2026, 8, 40873.77);
 
 /* ==================== MOTOR DE CÁLCULO ==================== */
 function primaBasicaMensual(t){ return (Number(t.primaBasicaAnual)||0) / 12; }
@@ -491,6 +534,12 @@ function calcularVista(anio, mes, colaboradorFiltro, persistenciaPct){
 const fmtUF = n => (Number(n)||0).toLocaleString('es-CL', { minimumFractionDigits:2, maximumFractionDigits:2 });
 const fmtCLP = n => "$" + Math.round(Number(n)||0).toLocaleString('es-CL');
 const fmtPct = n => (Number(n)*100).toLocaleString('es-CL', { minimumFractionDigits:1, maximumFractionDigits:1 }) + "%";
+// Convierte un monto UF a CLP usando el Valor UF del período; si no hay dato cargado para ese
+// Año/Mes, muestra un aviso en vez de un número inventado (nunca se usa un valor por defecto).
+function celdaCLP(montoUF, valorUF){
+  if(valorUF == null) return `<span class="text-amber-600 text-xs font-medium">Falta Valor UF</span>`;
+  return fmtCLP(montoUF * valorUF);
+}
 function fmtFecha(iso){
   if(!iso) return "—";
   const p = String(iso).split('-');
@@ -610,7 +659,15 @@ function renderAll(){
 function renderKPIs(vista){
   const a = vista.agg;
   const valorUF = getValorUF(filtros.anio, filtros.mes);
-  document.getElementById('kpiTotalCLP').textContent = fmtCLP(a.total * valorUF);
+  const kpiTotalCLP = document.getElementById('kpiTotalCLP');
+  const btnFaltaUF = document.getElementById('btnFaltaUFKpi');
+  if(valorUF == null){
+    kpiTotalCLP.textContent = "—";
+    btnFaltaUF.classList.remove('hidden');
+  } else {
+    kpiTotalCLP.textContent = fmtCLP(a.total * valorUF);
+    btnFaltaUF.classList.add('hidden');
+  }
   document.getElementById('kpiTotalUF').textContent = fmtUF(a.total) + " UF";
   document.getElementById('kpiPP').textContent = fmtUF(a.pp) + " UF";
   document.getElementById('kpiBonoPersistencia').textContent = fmtUF(a.bonoVenta + a.premioPersistencia) + " UF";
@@ -641,18 +698,18 @@ function renderDesglose(vista){
       <td class="py-2 pr-3 text-slate-500 text-xs">${f.base}</td>
       <td class="py-2 pr-3 text-slate-500 text-xs">${f.tasa}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.uf)}</td>
-      <td class="py-2 text-right tabular-nums">${fmtCLP(f.uf * valorUF)}</td>
+      <td class="py-2 text-right tabular-nums">${celdaCLP(f.uf, valorUF)}</td>
     </tr>`).join('') + `
     <tr class="fade-in bg-slate-50 font-bold">
       <td class="py-2 pr-3" colspan="3">Total a pagar</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(a.total)}</td>
-      <td class="py-2 text-right tabular-nums">${fmtCLP(a.total * valorUF)}</td>
+      <td class="py-2 text-right tabular-nums">${celdaCLP(a.total, valorUF)}</td>
     </tr>`;
 }
 
 function renderRanking(anio, mes, persistenciaPct){
-  document.getElementById('rankingContexto').textContent = `${MESES[mes-1]} ${anio} · UF cierre: ${fmtUF(getValorUF(anio,mes))}`;
   const valorUF = getValorUF(anio, mes);
+  document.getElementById('rankingContexto').textContent = `${MESES[mes-1]} ${anio} · UF cierre: ${valorUF == null ? 'sin dato' : fmtUF(valorUF)}`;
   const colaboradores = colaboradoresConDatos(anio, mes);
   const filas = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct)).sort((x,y) => y.total - x.total);
   const tbody = document.getElementById('tablaRanking');
@@ -669,7 +726,7 @@ function renderRanking(anio, mes, persistenciaPct){
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.premioPersistencia)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.recaudacion)}</td>
       <td class="py-2 pr-3 text-right tabular-nums font-semibold">${fmtUF(f.total)}</td>
-      <td class="py-2 text-right tabular-nums">${fmtCLP(f.total * valorUF)}</td>
+      <td class="py-2 text-right tabular-nums">${celdaCLP(f.total, valorUF)}</td>
     </tr>`).join('');
 }
 
@@ -697,13 +754,24 @@ function renderHistorial(){
       <td class="py-2 pr-3">${p ? escapeHtml(p.nombre) : '<span class="text-red-500">Producto desconocido</span>'}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(t.primaBasicaAnual)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${t.primaExcesoAnual ? fmtUF(t.primaExcesoAnual) : '—'}</td>
-      <td class="py-2 text-center">
+      <td class="py-2 text-center whitespace-nowrap">
+        <button data-id="${t.id}" class="btnEditar text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-md w-8 h-8 inline-flex items-center justify-center transition" title="Editar">
+          <i class="fa-solid fa-pen"></i>
+        </button>
         <button data-id="${t.id}" class="btnEliminar text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md w-8 h-8 inline-flex items-center justify-center transition" title="Eliminar">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </td>
     </tr>`;
   }).join('');
+
+  tbody.querySelectorAll('.btnEditar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const t = transactions.find(t => t.id === id);
+      if(t) abrirModalTransaccion(t);
+    });
+  });
 
   tbody.querySelectorAll('.btnEliminar').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -717,7 +785,67 @@ function renderHistorial(){
 
 /* ==================== EVENTOS: FILTROS ==================== */
 function sincronizarInputValorUF(){
-  document.getElementById('filtroValorUF').value = getValorUF(filtros.anio, filtros.mes);
+  const input = document.getElementById('filtroValorUF');
+  const aviso = document.getElementById('filtroValorUFAviso');
+  const nota = document.getElementById('filtroValorUFNota');
+  const v = getValorUF(filtros.anio, filtros.mes);
+  if(v == null){
+    input.value = "";
+    input.disabled = true;
+    input.placeholder = "Sin dato";
+    aviso.classList.remove('hidden');
+    nota.classList.add('hidden');
+  } else {
+    input.disabled = false;
+    input.value = v;
+    aviso.classList.add('hidden');
+    nota.classList.remove('hidden');
+  }
+}
+
+// Si el período seleccionado no tiene Valor UF cargado, se pide de inmediato (nunca se calcula
+// en pesos con un supuesto silencioso). Se llama al iniciar y cada vez que cambia Año/Mes.
+function revisarValorUFPeriodoActual(){
+  if(!tieneValorUF(filtros.anio, filtros.mes)) abrirModalValorUF(filtros.anio, filtros.mes);
+}
+
+function abrirModalValorUF(anio, mes){
+  const modal = document.getElementById('modalValorUF');
+  document.getElementById('modalUFContexto').textContent = `No tenemos el Valor UF de cierre de ${MESES[mes-1]} ${anio}. Ingrésalo para calcular los montos en pesos de este período.`;
+  document.getElementById('modalUFInput').value = "";
+  document.getElementById('modalUFError').classList.add('hidden');
+  modal.dataset.anio = anio;
+  modal.dataset.mes = mes;
+  modal.classList.remove('hidden');
+  setTimeout(() => document.getElementById('modalUFInput').focus(), 50);
+}
+function cerrarModalValorUF(){
+  document.getElementById('modalValorUF').classList.add('hidden');
+}
+
+function initModalValorUF(){
+  const modal = document.getElementById('modalValorUF');
+  document.getElementById('btnCerrarModalUF').addEventListener('click', cerrarModalValorUF);
+  document.getElementById('btnCancelarUF').addEventListener('click', cerrarModalValorUF);
+  modal.addEventListener('click', e => { if(e.target === modal) cerrarModalValorUF(); });
+  document.getElementById('btnAbrirUFdesdeAviso').addEventListener('click', () => abrirModalValorUF(filtros.anio, filtros.mes));
+  document.getElementById('btnFaltaUFKpi').addEventListener('click', () => abrirModalValorUF(filtros.anio, filtros.mes));
+
+  document.getElementById('btnGuardarUF').addEventListener('click', () => {
+    const anio = Number(modal.dataset.anio), mes = Number(modal.dataset.mes);
+    const val = Number(document.getElementById('modalUFInput').value);
+    const errorEl = document.getElementById('modalUFError');
+    if(isNaN(val) || val <= 0){
+      errorEl.textContent = "Ingresa un valor de UF válido, mayor a 0.";
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    setValorUF(anio, mes, val);
+    cerrarModalValorUF();
+    if(anio === filtros.anio && mes === filtros.mes) sincronizarInputValorUF();
+    renderAll();
+    toast(`Valor UF de ${MESES[mes-1]} ${anio} guardado: ${fmtUF(val)}.`, "success");
+  });
 }
 
 function initFiltros(){
@@ -727,8 +855,8 @@ function initFiltros(){
   sincronizarInputValorUF();
   document.getElementById('filtroPersistencia').value = filtros.persistencia;
 
-  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); sincronizarInputValorUF(); renderAll(); });
-  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); sincronizarInputValorUF(); renderAll(); });
+  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
+  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
   document.getElementById('filtroColaborador').addEventListener('change', e => { filtros.colaborador = e.target.value; renderAll(); });
   document.getElementById('filtroValorUF').addEventListener('input', e => {
     setValorUF(filtros.anio, filtros.mes, e.target.value);
@@ -740,10 +868,49 @@ function initFiltros(){
   });
 }
 
-/* ==================== EVENTOS: FORMULARIO ==================== */
+/* ==================== EVENTOS: FORMULARIO (MODAL NUEVA / EDITAR) ==================== */
+let editandoId = null;
+
+function abrirModalTransaccion(transaccion){
+  editandoId = transaccion ? transaccion.id : null;
+  document.getElementById('formError').classList.add('hidden');
+  document.getElementById('formTransaccion').reset();
+  poblarSelectProducto();
+
+  const titulo = document.getElementById('modalTransaccionTitulo');
+  const btnGuardar = document.getElementById('btnGuardarTransaccion');
+  if(transaccion){
+    titulo.innerHTML = '<i class="fa-solid fa-pen text-indigo-600"></i> Editar transacción / póliza';
+    btnGuardar.innerHTML = '<i class="fa-solid fa-check"></i> <span>Guardar cambios</span>';
+    document.getElementById('fColaborador').value = transaccion.colaborador || "";
+    document.getElementById('fCliente').value = transaccion.cliente || "";
+    document.getElementById('fProducto').value = transaccion.productoId || "";
+    document.getElementById('fPoliza').value = transaccion.poliza || "";
+    document.getElementById('fFechaSometimiento').value = transaccion.fechaSometimiento || "";
+    document.getElementById('fFechaEmision').value = transaccion.fechaEmision || "";
+    document.getElementById('fPrimaBasica').value = transaccion.primaBasicaAnual || "";
+    document.getElementById('fPrimaExceso').value = transaccion.primaExcesoAnual || "";
+    actualizarVisibilidadExceso();
+  } else {
+    titulo.innerHTML = '<i class="fa-solid fa-circle-plus text-indigo-600"></i> Nueva transacción / póliza';
+    btnGuardar.innerHTML = '<i class="fa-solid fa-plus"></i> <span>Agregar transacción</span>';
+  }
+  document.getElementById('modalTransaccion').classList.remove('hidden');
+}
+
+function cerrarModalTransaccion(){
+  document.getElementById('modalTransaccion').classList.add('hidden');
+  editandoId = null;
+}
+
 function initFormulario(){
   poblarSelectProducto();
   document.getElementById('fProducto').addEventListener('change', actualizarVisibilidadExceso);
+
+  document.getElementById('btnNuevaTransaccion').addEventListener('click', () => abrirModalTransaccion(null));
+  document.getElementById('btnCerrarModalTransaccion').addEventListener('click', cerrarModalTransaccion);
+  const modal = document.getElementById('modalTransaccion');
+  modal.addEventListener('click', e => { if(e.target === modal) cerrarModalTransaccion(); });
 
   document.getElementById('formTransaccion').addEventListener('submit', e => {
     e.preventDefault();
@@ -767,13 +934,22 @@ function initFormulario(){
       if(!fechaSometimiento) throw new Error("Ingresa la Fecha de Sometimiento.");
       if(isNaN(primaBasicaAnual) || primaBasicaAnual <= 0) throw new Error("La Prima Básica Anual debe ser un número mayor a 0.");
 
-      transactions.push(construirTransaccion({ colaborador, cliente, productoId, poliza, fechaSometimiento, fechaEmision, primaBasicaAnual, primaExcesoAnual }));
-      toast(`Transacción agregada para ${escapeHtml(colaborador)}.` + (!fechaEmision ? " Sin Fecha de Emisión: quedará como pendiente en el historial." : ""), "success");
-      document.getElementById('formTransaccion').reset();
-      poblarSelectProducto();
+      const datos = { colaborador, cliente, productoId, poliza, fechaSometimiento, fechaEmision, primaBasicaAnual, primaExcesoAnual };
+
+      if(editandoId){
+        const idx = transactions.findIndex(t => t.id === editandoId);
+        if(idx === -1) throw new Error("La transacción que editabas ya no existe (¿la eliminaste en otra pestaña?).");
+        transactions[idx] = construirTransaccion({ ...datos, id: editandoId });
+        toast(`Transacción de ${escapeHtml(colaborador)} actualizada.` + (!fechaEmision ? " Sin Fecha de Emisión: quedará como pendiente en el historial." : ""), "success");
+      } else {
+        transactions.push(construirTransaccion(datos));
+        toast(`Transacción agregada para ${escapeHtml(colaborador)}.` + (!fechaEmision ? " Sin Fecha de Emisión: quedará como pendiente en el historial." : ""), "success");
+      }
+
+      cerrarModalTransaccion();
       renderAll();
     } catch(err){
-      errorEl.textContent = err.message || "No se pudo agregar la transacción.";
+      errorEl.textContent = err.message || "No se pudo guardar la transacción.";
       errorEl.classList.remove('hidden');
     }
   });
@@ -912,6 +1088,7 @@ function initCargaExcel(){
 
         sincronizarInputValorUF();
         renderAll();
+        revisarValorUFPeriodoActual();
         const sinEmision = nuevas.filter(t => !t.fechaEmision).length;
         toast(`Se cargaron ${nuevas.length} transacciones desde "${file.name}"${descartadas ? ` (${descartadas} filas descartadas por datos incompletos)` : ""}${sinEmision ? ` · ${sinEmision} sin Fecha de Emisión quedaron como pendientes` : ""}${mesesUFCargados ? ` · ${mesesUFCargados} valores de UF mensual cargados` : ""}.`, "success");
       } catch(err){
@@ -966,7 +1143,7 @@ function initGuardarExcel(){
           "Premio Persistencia (UF)": Number(d.premioPersistencia.toFixed(2)),
           "Recaudación (UF)": Number(d.recaudacion.toFixed(2)),
           "Total (UF)": Number(d.total.toFixed(2)),
-          "Total (CLP aprox)": Math.round(d.total * valorUFActual)
+          "Total (CLP aprox)": valorUFActual != null ? Math.round(d.total * valorUFActual) : ""
         }));
       const wsResumen = XLSX.utils.json_to_sheet(filasResumen.length ? filasResumen : [{ "Aviso": `Sin transacciones con Fecha de Emisión en ${MESES[filtros.mes-1]} ${filtros.anio}` }]);
       XLSX.utils.book_append_sheet(wb, wsResumen, `Resumen_${MESES[filtros.mes-1]}_${filtros.anio}`);
@@ -980,7 +1157,7 @@ function initGuardarExcel(){
       XLSX.utils.book_append_sheet(wb, wsValorUF, "Valor_UF_Mensual");
 
       const wsParametros = XLSX.utils.json_to_sheet([{
-        "Valor UF de cierre del mes filtrado ($)": valorUFActual,
+        "Valor UF de cierre del mes filtrado ($)": valorUFActual != null ? valorUFActual : "Sin dato",
         "Persistencia % del agente": filtros.persistencia,
         "Año filtro": filtros.anio,
         "Mes filtro": MESES[filtros.mes-1],
@@ -1002,9 +1179,19 @@ function initGuardarExcel(){
 document.addEventListener('DOMContentLoaded', () => {
   initFiltros();
   initFormulario();
+  initModalValorUF();
   initCargaExcel();
   initGuardarExcel();
   renderAll();
+  revisarValorUFPeriodoActual();
+
+  // Cerrar cualquier modal abierto con Escape.
+  document.addEventListener('keydown', e => {
+    if(e.key === "Escape"){
+      cerrarModalTransaccion();
+      cerrarModalValorUF();
+    }
+  });
 });
 
 })();
