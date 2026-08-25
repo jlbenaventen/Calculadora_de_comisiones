@@ -224,18 +224,22 @@
       </span>
     </div>
     <div class="overflow-x-auto max-h-96 overflow-y-auto">
-      <table class="w-full text-sm min-w-[1220px]">
+      <table class="w-full text-sm min-w-[1520px]">
         <thead class="sticky top-0 bg-white">
           <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
-            <th class="py-2 pr-3">Colaborador</th>
-            <th class="py-2 pr-3">Cliente</th>
-            <th class="py-2 pr-3">N° Póliza</th>
-            <th class="py-2 pr-3">F. Sometimiento</th>
-            <th class="py-2 pr-3">F. Emisión</th>
-            <th class="py-2 pr-3">Régimen</th>
+            <th class="py-2 pr-3">Mes Sometimiento</th>
+            <th class="py-2 pr-3">Mes Emisión</th>
+            <th class="py-2 pr-3">Agentes</th>
             <th class="py-2 pr-3">Producto</th>
-            <th class="py-2 pr-3 text-right">P. Básica Anual (UF)</th>
-            <th class="py-2 pr-3 text-right">P. Exceso Anual (UF)</th>
+            <th class="py-2 pr-3">Propuesta</th>
+            <th class="py-2 pr-3">Póliza</th>
+            <th class="py-2 pr-3 text-right">PB</th>
+            <th class="py-2 pr-3 text-right">Exc</th>
+            <th class="py-2 pr-3 text-right">UFAS Pers</th>
+            <th class="py-2 pr-3 text-right">UFAS Total</th>
+            <th class="py-2 pr-3 text-right">k</th>
+            <th class="py-2 pr-3">Fecha</th>
+            <th class="py-2 pr-3">Cliente</th>
             <th class="py-2 text-center">Acciones</th>
           </tr>
         </thead>
@@ -293,9 +297,15 @@
         <label class="block text-xs font-medium text-slate-500 mb-1">Producto</label>
         <select id="fProducto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
       </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; P&oacute;liza</label>
-        <input id="fPoliza" required placeholder="Ej: POL-2026-0456" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; Propuesta</label>
+          <input id="fPropuesta" placeholder="Ej: PROP-2026-0456" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; P&oacute;liza</label>
+          <input id="fPoliza" required placeholder="Ej: POL-2026-0456" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
@@ -307,7 +317,11 @@
           <input id="fFechaEmision" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
         </div>
       </div>
-      <p class="text-[11px] text-slate-400 -mt-2">Si la Fecha de Emisión queda vacía, la venta se guarda pero no se contabiliza en KPIs, desglose ni ranking hasta que la completes (igual que en tu Excel de comisiones).</p>
+      <p class="text-[11px] text-slate-400 -mt-2">Si la Fecha de Emisión queda vacía, la venta se guarda pero no se contabiliza en KPIs, desglose ni ranking hasta que la completes (igual que en tu Excel de comisiones). En el Historial y el Excel, Sometimiento y Emisión se muestran solo como mes (el día queda guardado igual).</p>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Cierre (fecha en que se cerró el producto)</label>
+        <input id="fFechaCierre" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+      </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">Prima B&aacute;sica Anual (UF)</label>
@@ -317,6 +331,11 @@
           <label class="block text-xs font-medium text-slate-500 mb-1">Prima Exceso Anual (UF)</label>
           <input id="fPrimaExceso" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
         </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">k (Capital, UF) &mdash; opcional</label>
+        <input id="fK" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        <p class="text-[11px] text-slate-400 mt-1">Solo se guarda; esta calculadora todavía no calcula la Comisión Capital a partir de este valor.</p>
       </div>
       <p id="formError" class="text-xs text-red-600 hidden"></p>
       <button type="submit" id="btnGuardarTransaccion" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
@@ -459,30 +478,43 @@ function construirTransaccion(datos){
     id: datos.id || uid(),
     colaborador: datos.colaborador,
     cliente: datos.cliente,
+    propuesta: datos.propuesta || "",
     poliza: datos.poliza,
     productoId: datos.productoId,
     fechaSometimiento: datos.fechaSometimiento || "",
     fechaEmision: datos.fechaEmision || "",
+    fechaCierre: datos.fechaCierre || "",
     anio, mes,
     primaBasicaAnual: Number(datos.primaBasicaAnual) || 0,
-    primaExcesoAnual: Number(datos.primaExcesoAnual) || 0
+    primaExcesoAnual: Number(datos.primaExcesoAnual) || 0,
+    k: Number(datos.k) || 0
   };
+}
+
+// Nombre del mes (español) a partir de una fecha ISO "YYYY-MM-DD"; "" si no hay fecha.
+function mesNombreDesdeFecha(fechaISO){
+  if(!fechaISO) return "";
+  const partes = String(fechaISO).split('-');
+  if(partes.length !== 3) return "";
+  const mes = Number(partes[1]);
+  if(!mes || mes < 1 || mes > 12) return "";
+  return MESES[mes-1];
 }
 
 /* ==================== DATOS DE EJEMPLO (10 transacciones) ==================== */
 // Nota: la última fila (Gisela / Vive OK) se dejó a propósito con Fecha de Emisión
 // vacía para mostrar cómo el sistema la guarda pero no la contabiliza hasta completarla.
 let transactions = [
-  construirTransaccion({ colaborador:"Virginia",  cliente:"Familia Rojas",     productoId:"ahorro_familiar",     poliza:"POL-2026-1001", fechaSometimiento:"2026-03-02", fechaEmision:"2026-03-16", primaBasicaAnual:96,  primaExcesoAnual:24 }),
-  construirTransaccion({ colaborador:"Virginia",  cliente:"Jorge Herrera",     productoId:"seguro_vida",         poliza:"POL-2026-1002", fechaSometimiento:"2026-03-04", fechaEmision:"2026-03-18", primaBasicaAnual:60,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Virginia",  cliente:"Marcela Soto",      productoId:"salud_catastrofico",  poliza:"POL-2026-1003", fechaSometimiento:"2026-03-06", fechaEmision:"2026-03-20", primaBasicaAnual:14,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Carolina", cliente:"Familia Contreras", productoId:"ahorro_universitario",poliza:"POL-2026-1004", fechaSometimiento:"2026-03-03", fechaEmision:"2026-03-17", primaBasicaAnual:144, primaExcesoAnual:36 }),
-  construirTransaccion({ colaborador:"Carolina", cliente:"Pedro Fuentes",     productoId:"seguro_oncologico",   poliza:"POL-2026-1005", fechaSometimiento:"2026-03-05", fechaEmision:"2026-03-19", primaBasicaAnual:9,   primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Carolina", cliente:"Rosa Araya",        productoId:"ap_salud",            poliza:"POL-2026-1006", fechaSometimiento:"2026-03-07", fechaEmision:"2026-03-21", primaBasicaAnual:11,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Gisela",   cliente:"Luis Vergara",      productoId:"dominium",            poliza:"POL-2026-1007", fechaSometimiento:"2026-03-08", fechaEmision:"2026-03-22", primaBasicaAnual:180, primaExcesoAnual:60 }),
-  construirTransaccion({ colaborador:"Gisela",   cliente:"Camila Nuñez",      productoId:"temporales",          poliza:"POL-2026-1008", fechaSometimiento:"2026-03-09", fechaEmision:"2026-03-23", primaBasicaAnual:48,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Gisela",   cliente:"Diego Pizarro",     productoId:"salud_esencial",      poliza:"POL-2026-1009", fechaSometimiento:"2026-03-10", fechaEmision:"2026-03-24", primaBasicaAnual:18,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Gisela",   cliente:"Ana Reyes",         productoId:"vive_ok",             poliza:"POL-2026-1010", fechaSometimiento:"2026-03-25", fechaEmision:"",           primaBasicaAnual:30,  primaExcesoAnual:0  })
+  construirTransaccion({ colaborador:"Virginia",  cliente:"Familia Rojas",     propuesta:"PROP-2026-1001", productoId:"ahorro_familiar",     poliza:"POL-2026-1001", fechaSometimiento:"2026-03-02", fechaEmision:"2026-03-16", fechaCierre:"2026-03-16", primaBasicaAnual:96,  primaExcesoAnual:24, k:0 }),
+  construirTransaccion({ colaborador:"Virginia",  cliente:"Jorge Herrera",     propuesta:"PROP-2026-1002", productoId:"seguro_vida",         poliza:"POL-2026-1002", fechaSometimiento:"2026-03-04", fechaEmision:"2026-03-18", fechaCierre:"2026-03-18", primaBasicaAnual:60,  primaExcesoAnual:0,  k:0 }),
+  construirTransaccion({ colaborador:"Virginia",  cliente:"Marcela Soto",      propuesta:"PROP-2026-1003", productoId:"salud_catastrofico",  poliza:"POL-2026-1003", fechaSometimiento:"2026-03-06", fechaEmision:"2026-03-20", fechaCierre:"2026-03-20", primaBasicaAnual:14,  primaExcesoAnual:0,  k:0 }),
+  construirTransaccion({ colaborador:"Carolina", cliente:"Familia Contreras", propuesta:"PROP-2026-1004", productoId:"ahorro_universitario",poliza:"POL-2026-1004", fechaSometimiento:"2026-03-03", fechaEmision:"2026-03-17", fechaCierre:"2026-03-17", primaBasicaAnual:144, primaExcesoAnual:36, k:0 }),
+  construirTransaccion({ colaborador:"Carolina", cliente:"Pedro Fuentes",     propuesta:"PROP-2026-1005", productoId:"seguro_oncologico",   poliza:"POL-2026-1005", fechaSometimiento:"2026-03-05", fechaEmision:"2026-03-19", fechaCierre:"2026-03-19", primaBasicaAnual:9,   primaExcesoAnual:0,  k:0 }),
+  construirTransaccion({ colaborador:"Carolina", cliente:"Rosa Araya",        propuesta:"PROP-2026-1006", productoId:"ap_salud",            poliza:"POL-2026-1006", fechaSometimiento:"2026-03-07", fechaEmision:"2026-03-21", fechaCierre:"2026-03-21", primaBasicaAnual:11,  primaExcesoAnual:0,  k:0 }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Luis Vergara",      propuesta:"PROP-2026-1007", productoId:"dominium",            poliza:"POL-2026-1007", fechaSometimiento:"2026-03-08", fechaEmision:"2026-03-22", fechaCierre:"2026-03-22", primaBasicaAnual:180, primaExcesoAnual:60, k:0 }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Camila Nuñez",      propuesta:"PROP-2026-1008", productoId:"temporales",          poliza:"POL-2026-1008", fechaSometimiento:"2026-03-09", fechaEmision:"2026-03-23", fechaCierre:"2026-03-23", primaBasicaAnual:48,  primaExcesoAnual:0,  k:0 }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Diego Pizarro",     propuesta:"PROP-2026-1009", productoId:"salud_esencial",      poliza:"POL-2026-1009", fechaSometimiento:"2026-03-10", fechaEmision:"2026-03-24", fechaCierre:"2026-03-24", primaBasicaAnual:18,  primaExcesoAnual:0,  k:0 }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Ana Reyes",         propuesta:"PROP-2026-1010", productoId:"vive_ok",             poliza:"POL-2026-1010", fechaSometimiento:"2026-03-25", fechaEmision:"",           fechaCierre:"",           primaBasicaAnual:30,  primaExcesoAnual:0,  k:0 })
 ];
 
 /* ==================== ESTADO / FILTROS ==================== */
@@ -822,27 +854,32 @@ function renderRanking(anio, mes, persistenciaPct){
 function renderHistorial(){
   const tbody = document.getElementById('tablaHistorial');
   if(transactions.length === 0){
-    tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-slate-400 text-sm">No hay transacciones cargadas. Agrega una con el formulario o carga un Excel.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" class="py-6 text-center text-slate-400 text-sm">No hay transacciones cargadas. Agrega una con el formulario o carga un Excel.</td></tr>`;
     return;
   }
   const ordenado = [...transactions].sort((a,b) => (b.fechaEmision||b.fechaSometimiento||"").localeCompare(a.fechaEmision||a.fechaSometimiento||"") || a.colaborador.localeCompare(b.colaborador,'es'));
   tbody.innerHTML = ordenado.map(t => {
     const p = productById(t.productoId);
-    const regimen = p ? p.regimen : "—";
     const pendiente = !t.fechaEmision;
+    const ufasPers = t.primaBasicaAnual;
+    const ufasTotal = t.primaBasicaAnual + t.primaExcesoAnual;
     return `
     <tr class="fade-in hover:bg-slate-50">
-      <td class="py-2 pr-3 font-medium text-slate-700">${escapeHtml(t.colaborador)}</td>
-      <td class="py-2 pr-3 text-slate-600">${escapeHtml(t.cliente||'')}</td>
-      <td class="py-2 pr-3 text-slate-500">${escapeHtml(t.poliza||'')}</td>
-      <td class="py-2 pr-3 text-slate-500">${fmtFecha(t.fechaSometimiento)}</td>
+      <td class="py-2 pr-3 text-slate-500">${mesNombreDesdeFecha(t.fechaSometimiento) || '—'}</td>
       <td class="py-2 pr-3">
-        ${pendiente ? '<span class="text-xs font-medium px-2 py-0.5 rounded-full badge-pendiente"><i class="fa-solid fa-clock mr-1"></i>Pendiente</span>' : `<span class="text-slate-500">${fmtFecha(t.fechaEmision)}</span>`}
+        ${pendiente ? '<span class="text-xs font-medium px-2 py-0.5 rounded-full badge-pendiente"><i class="fa-solid fa-clock mr-1"></i>Pendiente</span>' : `<span class="text-slate-500">${mesNombreDesdeFecha(t.fechaEmision)}</span>`}
       </td>
-      <td class="py-2 pr-3"><span class="text-xs font-medium px-2 py-0.5 rounded-full ${REGIMEN_BADGE[regimen]||''}">${REGIMEN_LABEL[regimen]||regimen}</span></td>
+      <td class="py-2 pr-3 font-medium text-slate-700">${escapeHtml(t.colaborador)}</td>
       <td class="py-2 pr-3">${p ? escapeHtml(p.nombre) : '<span class="text-red-500">Producto desconocido</span>'}</td>
+      <td class="py-2 pr-3 text-slate-500">${escapeHtml(t.propuesta||'') || '—'}</td>
+      <td class="py-2 pr-3 text-slate-500">${escapeHtml(t.poliza||'')}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(t.primaBasicaAnual)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${t.primaExcesoAnual ? fmtUF(t.primaExcesoAnual) : '—'}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(ufasPers)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(ufasTotal)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${t.k ? fmtUF(t.k) : '—'}</td>
+      <td class="py-2 pr-3 text-slate-500">${fmtFecha(t.fechaCierre) || '—'}</td>
+      <td class="py-2 pr-3 text-slate-600">${escapeHtml(t.cliente||'')}</td>
       <td class="py-2 text-center whitespace-nowrap">
         <button data-id="${t.id}" class="btnEditar text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-md w-8 h-8 inline-flex items-center justify-center transition" title="Editar">
           <i class="fa-solid fa-pen"></i>
@@ -1004,11 +1041,14 @@ function abrirModalTransaccion(transaccion){
     document.getElementById('fColaborador').value = transaccion.colaborador || "";
     document.getElementById('fCliente').value = transaccion.cliente || "";
     document.getElementById('fProducto').value = transaccion.productoId || "";
+    document.getElementById('fPropuesta').value = transaccion.propuesta || "";
     document.getElementById('fPoliza').value = transaccion.poliza || "";
     document.getElementById('fFechaSometimiento').value = transaccion.fechaSometimiento || "";
     document.getElementById('fFechaEmision').value = transaccion.fechaEmision || "";
+    document.getElementById('fFechaCierre').value = transaccion.fechaCierre || "";
     document.getElementById('fPrimaBasica').value = transaccion.primaBasicaAnual || "";
     document.getElementById('fPrimaExceso').value = transaccion.primaExcesoAnual || "";
+    document.getElementById('fK').value = transaccion.k || "";
     actualizarVisibilidadExceso();
   } else {
     titulo.innerHTML = '<i class="fa-solid fa-circle-plus text-indigo-600"></i> Nueva transacción / póliza';
@@ -1039,10 +1079,13 @@ function initFormulario(){
       const colaborador = document.getElementById('fColaborador').value.trim();
       const cliente = document.getElementById('fCliente').value.trim();
       const productoId = document.getElementById('fProducto').value;
+      const propuesta = document.getElementById('fPropuesta').value.trim();
       const poliza = document.getElementById('fPoliza').value.trim();
       const fechaSometimiento = document.getElementById('fFechaSometimiento').value;
       const fechaEmision = document.getElementById('fFechaEmision').value;
+      const fechaCierre = document.getElementById('fFechaCierre').value;
       const primaBasicaAnual = Number(document.getElementById('fPrimaBasica').value);
+      const k = Number(document.getElementById('fK').value) || 0;
       const p = productById(productoId);
       const primaExcesoAnual = (p && p.usaExceso) ? (Number(document.getElementById('fPrimaExceso').value) || 0) : 0;
 
@@ -1053,7 +1096,7 @@ function initFormulario(){
       if(!fechaSometimiento) throw new Error("Ingresa la Fecha de Sometimiento.");
       if(isNaN(primaBasicaAnual) || primaBasicaAnual <= 0) throw new Error("La Prima Básica Anual debe ser un número mayor a 0.");
 
-      const datos = { colaborador, cliente, productoId, poliza, fechaSometimiento, fechaEmision, primaBasicaAnual, primaExcesoAnual };
+      const datos = { colaborador, cliente, productoId, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k };
 
       if(editandoId){
         const idx = transactions.findIndex(t => t.id === editandoId);
@@ -1076,14 +1119,17 @@ function initFormulario(){
 
 /* ==================== CARGA DE EXCEL (SheetJS) ==================== */
 const ENCABEZADOS_ESPERADOS = {
-  colaborador: ["colaborador","agente","nombre colaborador"],
+  colaborador: ["colaborador","agente","agentes","nombre colaborador"],
   cliente: ["cliente","nombre cliente"],
   producto: ["producto","product"],
+  propuesta: ["propuesta","n° propuesta","n propuesta","numero propuesta"],
   poliza: ["n° póliza","n° poliza","poliza","póliza","n° póliza/cliente","n° poliza/cliente"],
-  fechaSometimiento: ["fecha sometimiento","fecha de sometimiento","f. sometimiento"],
-  fechaEmision: ["fecha emisión","fecha emision","fecha de emisión","fecha de emision","f. emisión","f. emision"],
-  primaBasicaAnual: ["prima básica anual (uf)","prima basica anual (uf)","prima básica anual","prima basica anual","prima básica (uf)","prima basica"],
-  primaExcesoAnual: ["prima exceso anual (uf)","prima exceso anual","prima exceso (uf)","prima exceso"]
+  fechaSometimiento: ["fecha sometimiento","fecha de sometimiento","f. sometimiento","mes sometimiento"],
+  fechaEmision: ["fecha emisión","fecha emision","fecha de emisión","fecha de emision","f. emisión","f. emision","mes emision","mes emisión"],
+  fechaCierre: ["fecha","fecha cierre","fecha de cierre"],
+  primaBasicaAnual: ["prima básica anual (uf)","prima basica anual (uf)","prima básica anual","prima basica anual","prima básica (uf)","prima basica","pb"],
+  primaExcesoAnual: ["prima exceso anual (uf)","prima exceso anual","prima exceso (uf)","prima exceso","exc"],
+  k: ["k","capital","k (capital)"]
 };
 
 function normalizarEncabezado(str){
@@ -1123,15 +1169,18 @@ function mapearFila(fila){
   const cliente = String(buscar(ENCABEZADOS_ESPERADOS.cliente) ?? "").trim();
   const nombreProducto = String(buscar(ENCABEZADOS_ESPERADOS.producto) ?? "").trim();
   const producto = productByNombre(nombreProducto) || PRODUCTS.find(p => p.id === nombreProducto);
+  const propuesta = String(buscar(ENCABEZADOS_ESPERADOS.propuesta) ?? "").trim();
   const poliza = String(buscar(ENCABEZADOS_ESPERADOS.poliza) ?? "").trim();
   const fechaSometimiento = normalizarFechaISO(buscar(ENCABEZADOS_ESPERADOS.fechaSometimiento));
   const fechaEmision = normalizarFechaISO(buscar(ENCABEZADOS_ESPERADOS.fechaEmision));
+  const fechaCierre = normalizarFechaISO(buscar(ENCABEZADOS_ESPERADOS.fechaCierre));
   const primaBasicaAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaBasicaAnual));
   const primaExcesoAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaExcesoAnual)) || 0;
+  const k = Number(buscar(ENCABEZADOS_ESPERADOS.k)) || 0;
 
   if(!colaborador || !producto || isNaN(primaBasicaAnual)) return null;
 
-  return construirTransaccion({ colaborador, cliente, productoId: producto.id, poliza, fechaSometimiento, fechaEmision, primaBasicaAnual, primaExcesoAnual });
+  return construirTransaccion({ colaborador, cliente, productoId: producto.id, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k });
 }
 
 const ENCABEZADOS_UF = {
@@ -1231,23 +1280,40 @@ function initGuardarExcel(){
       }
       const wb = XLSX.utils.book_new();
 
+      // Orden y nombres de columna exactos pedidos por el usuario (Historial y Excel deben coincidir).
+      // MES SOMETIMIENTO/MES EMISION/fecha se guardan como fecha real (Excel) para no perder el día -
+      // solo se les da un formato de celda que muestra el mes (o el día en el caso de "fecha").
       const filasRegistro = transactions.map(t => {
         const p = productById(t.productoId);
         return {
-          "Colaborador": t.colaborador,
-          "Cliente": t.cliente || "",
-          "N° Póliza": t.poliza,
-          "Fecha Sometimiento": t.fechaSometimiento ? new Date(t.fechaSometimiento + "T00:00:00") : "",
-          "Fecha Emisión": t.fechaEmision ? new Date(t.fechaEmision + "T00:00:00") : "",
-          "Año": t.anio || "",
-          "Mes": t.mes ? MESES[t.mes-1] : "",
-          "Régimen": p ? REGIMEN_LABEL[p.regimen] : "",
-          "Producto": p ? p.nombre : t.productoId,
-          "Prima Básica Anual (UF)": Number(t.primaBasicaAnual) || 0,
-          "Prima Exceso Anual (UF)": Number(t.primaExcesoAnual) || 0
+          "MES SOMETIMIENTO": t.fechaSometimiento ? new Date(t.fechaSometimiento + "T00:00:00") : "",
+          "MES EMISION": t.fechaEmision ? new Date(t.fechaEmision + "T00:00:00") : "",
+          "AGENTES": t.colaborador,
+          "PRODUCTO": p ? p.nombre : t.productoId,
+          "PROPUESTA": t.propuesta || "",
+          "PÓLIZA": t.poliza,
+          "PB": Number(t.primaBasicaAnual) || 0,
+          "EXC": Number(t.primaExcesoAnual) || 0,
+          "UFAS PERS": Number(t.primaBasicaAnual) || 0,
+          "UFAS TOTAL": (Number(t.primaBasicaAnual) || 0) + (Number(t.primaExcesoAnual) || 0),
+          "k": Number(t.k) || 0,
+          "fecha": t.fechaCierre ? new Date(t.fechaCierre + "T00:00:00") : "",
+          "Cliente": t.cliente || ""
         };
       });
       const wsRegistro = XLSX.utils.json_to_sheet(filasRegistro);
+      // Formato de celda: MES SOMETIMIENTO (A) y MES EMISION (B) muestran "mes año" (el valor real
+      // sigue siendo la fecha completa, con día, para no perderlo al reimportar); fecha (L) se muestra
+      // como fecha normal.
+      const filaFinal = filasRegistro.length + 1;
+      for(let fila = 2; fila <= filaFinal; fila++){
+        // json_to_sheet ya convirtió los Date en serial numérico ('t':'n') con un formato de fecha
+        // por defecto - solo hay que pisar ese '.z' (funciona igual si la celda no es fecha porque
+        // esas filas de "" quedan sin celda en A/B/L, así que el if no encuentra nada que pisar).
+        if(wsRegistro[`A${fila}`] && wsRegistro[`A${fila}`].t === 'n') wsRegistro[`A${fila}`].z = 'mmmm yyyy';
+        if(wsRegistro[`B${fila}`] && wsRegistro[`B${fila}`].t === 'n') wsRegistro[`B${fila}`].z = 'mmmm yyyy';
+        if(wsRegistro[`L${fila}`] && wsRegistro[`L${fila}`].t === 'n') wsRegistro[`L${fila}`].z = 'dd-mm-yyyy';
+      }
       XLSX.utils.book_append_sheet(wb, wsRegistro, "Registro_Ventas");
 
       const valorUFActual = getValorUF(filtros.anio, filtros.mes);
