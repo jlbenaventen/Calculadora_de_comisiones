@@ -17,6 +17,10 @@
   .badge-salud { background:#ccfbf1; color:#0f766e; }
   .badge-contrato { background:#dcfce7; color:#166534; }
   .badge-pendiente { background:#fef3c7; color:#92400e; }
+  .vista-tab-btn { border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+  .vista-tab-activa { color:#4338ca; border-color:#4338ca; }
+  .vista-tab-inactiva { color:#94a3b8; }
+  .vista-tab-inactiva:hover { color:#475569; }
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
@@ -82,7 +86,13 @@
           <i class="fa-solid fa-triangle-exclamation"></i> Sin dato para este mes.
           <button id="btnAbrirUFdesdeAviso" type="button" class="underline hover:no-underline">Ingresarlo</button>
         </p>
-        <p id="filtroValorUFNota" class="text-[11px] text-slate-400 mt-1">Se guarda un valor por cada Año/Mes — cambia de período arriba para ver o editar el suyo.</p>
+        <p id="filtroValorUFBloqueada" class="text-[11px] text-slate-400 mt-1 hidden">
+          <i class="fa-solid fa-lock"></i> Valor guardado y bloqueado para este período.
+          <button id="btnCorregirUF" type="button" class="text-indigo-600 underline hover:no-underline">Corregir</button>
+        </p>
+        <p id="filtroValorUFEditando" class="text-[11px] text-indigo-600 font-medium mt-1 hidden">
+          <i class="fa-solid fa-pen"></i> Corrigiendo — el nuevo valor se guarda al salir del campo.
+        </p>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">Persistencia % del agente</label>
@@ -130,7 +140,22 @@
     </div>
   </section>
 
-  <!-- ==================== DESGLOSE CONCEPTO POR CONCEPTO ==================== -->
+  <!-- ==================== PESTAÑAS DE VISTA ==================== -->
+  <div class="flex items-center gap-1 border-b border-slate-200 -mb-1 overflow-x-auto">
+    <button id="tabResumen" data-vista="resumen" class="vista-tab-btn vista-tab-activa flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap">
+      <i class="fa-solid fa-list-check"></i> Resumen
+    </button>
+    <button id="tabComparativo" data-vista="comparativo" class="vista-tab-btn vista-tab-inactiva flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap">
+      <i class="fa-solid fa-ranking-star"></i> Reporte comparativo
+    </button>
+    <button id="tabHistorial" data-vista="historial" class="vista-tab-btn vista-tab-inactiva flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap">
+      <i class="fa-solid fa-database"></i> Historial
+      <span id="contadorRegistrosTab" class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-semibold">0</span>
+    </button>
+  </div>
+
+  <!-- ==================== VISTA: DESGLOSE CONCEPTO POR CONCEPTO ==================== -->
+  <div id="vistaResumen">
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
@@ -153,8 +178,10 @@
       </table>
     </div>
   </section>
+  </div>
 
-  <!-- ==================== RANKING COMPARATIVO ==================== -->
+  <!-- ==================== VISTA: RANKING COMPARATIVO ==================== -->
+  <div id="vistaComparativo" class="hidden">
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
@@ -180,8 +207,10 @@
       </table>
     </div>
   </section>
+  </div>
 
-  <!-- ==================== HISTORIAL DE TRANSACCIONES ==================== -->
+  <!-- ==================== VISTA: HISTORIAL DE TRANSACCIONES ==================== -->
+  <div id="vistaHistorial" class="hidden">
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
@@ -211,6 +240,7 @@
       </table>
     </div>
   </section>
+  </div>
 
   <footer class="text-center text-xs text-slate-400 py-4">
     Calculadora de Comisiones &middot; cálculos en memoria, datos persistidos en el Excel que t&uacute; cargues o descargues.
@@ -232,7 +262,7 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">Colaborador</label>
-          <input id="fColaborador" list="listaColaboradores" required placeholder="Ej: Virginia Muñoz" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          <input id="fColaborador" list="listaColaboradores" required placeholder="Ej: Virginia" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
           <datalist id="listaColaboradores"></datalist>
         </div>
         <div>
@@ -382,19 +412,19 @@ function construirTransaccion(datos){
 }
 
 /* ==================== DATOS DE EJEMPLO (10 transacciones) ==================== */
-// Nota: la última fila (Gisela Torres / Vive OK) se dejó a propósito con Fecha de Emisión
+// Nota: la última fila (Gisela / Vive OK) se dejó a propósito con Fecha de Emisión
 // vacía para mostrar cómo el sistema la guarda pero no la contabiliza hasta completarla.
 let transactions = [
-  construirTransaccion({ colaborador:"Virginia Muñoz",  cliente:"Familia Rojas",     productoId:"ahorro_familiar",     poliza:"POL-2026-1001", fechaSometimiento:"2026-03-02", fechaEmision:"2026-03-16", primaBasicaAnual:96,  primaExcesoAnual:24 }),
-  construirTransaccion({ colaborador:"Virginia Muñoz",  cliente:"Jorge Herrera",     productoId:"seguro_vida",         poliza:"POL-2026-1002", fechaSometimiento:"2026-03-04", fechaEmision:"2026-03-18", primaBasicaAnual:60,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Virginia Muñoz",  cliente:"Marcela Soto",      productoId:"salud_catastrofico",  poliza:"POL-2026-1003", fechaSometimiento:"2026-03-06", fechaEmision:"2026-03-20", primaBasicaAnual:14,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Carolina Fernández", cliente:"Familia Contreras", productoId:"ahorro_universitario",poliza:"POL-2026-1004", fechaSometimiento:"2026-03-03", fechaEmision:"2026-03-17", primaBasicaAnual:144, primaExcesoAnual:36 }),
-  construirTransaccion({ colaborador:"Carolina Fernández", cliente:"Pedro Fuentes",     productoId:"seguro_oncologico",   poliza:"POL-2026-1005", fechaSometimiento:"2026-03-05", fechaEmision:"2026-03-19", primaBasicaAnual:9,   primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Carolina Fernández", cliente:"Rosa Araya",        productoId:"ap_salud",            poliza:"POL-2026-1006", fechaSometimiento:"2026-03-07", fechaEmision:"2026-03-21", primaBasicaAnual:11,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Luis Vergara",      productoId:"dominium",            poliza:"POL-2026-1007", fechaSometimiento:"2026-03-08", fechaEmision:"2026-03-22", primaBasicaAnual:180, primaExcesoAnual:60 }),
-  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Camila Nuñez",      productoId:"temporales",          poliza:"POL-2026-1008", fechaSometimiento:"2026-03-09", fechaEmision:"2026-03-23", primaBasicaAnual:48,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Diego Pizarro",     productoId:"salud_esencial",      poliza:"POL-2026-1009", fechaSometimiento:"2026-03-10", fechaEmision:"2026-03-24", primaBasicaAnual:18,  primaExcesoAnual:0  }),
-  construirTransaccion({ colaborador:"Gisela Torres",   cliente:"Ana Reyes",         productoId:"vive_ok",             poliza:"POL-2026-1010", fechaSometimiento:"2026-03-25", fechaEmision:"",           primaBasicaAnual:30,  primaExcesoAnual:0  })
+  construirTransaccion({ colaborador:"Virginia",  cliente:"Familia Rojas",     productoId:"ahorro_familiar",     poliza:"POL-2026-1001", fechaSometimiento:"2026-03-02", fechaEmision:"2026-03-16", primaBasicaAnual:96,  primaExcesoAnual:24 }),
+  construirTransaccion({ colaborador:"Virginia",  cliente:"Jorge Herrera",     productoId:"seguro_vida",         poliza:"POL-2026-1002", fechaSometimiento:"2026-03-04", fechaEmision:"2026-03-18", primaBasicaAnual:60,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Virginia",  cliente:"Marcela Soto",      productoId:"salud_catastrofico",  poliza:"POL-2026-1003", fechaSometimiento:"2026-03-06", fechaEmision:"2026-03-20", primaBasicaAnual:14,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Carolina", cliente:"Familia Contreras", productoId:"ahorro_universitario",poliza:"POL-2026-1004", fechaSometimiento:"2026-03-03", fechaEmision:"2026-03-17", primaBasicaAnual:144, primaExcesoAnual:36 }),
+  construirTransaccion({ colaborador:"Carolina", cliente:"Pedro Fuentes",     productoId:"seguro_oncologico",   poliza:"POL-2026-1005", fechaSometimiento:"2026-03-05", fechaEmision:"2026-03-19", primaBasicaAnual:9,   primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Carolina", cliente:"Rosa Araya",        productoId:"ap_salud",            poliza:"POL-2026-1006", fechaSometimiento:"2026-03-07", fechaEmision:"2026-03-21", primaBasicaAnual:11,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Luis Vergara",      productoId:"dominium",            poliza:"POL-2026-1007", fechaSometimiento:"2026-03-08", fechaEmision:"2026-03-22", primaBasicaAnual:180, primaExcesoAnual:60 }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Camila Nuñez",      productoId:"temporales",          poliza:"POL-2026-1008", fechaSometimiento:"2026-03-09", fechaEmision:"2026-03-23", primaBasicaAnual:48,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Diego Pizarro",     productoId:"salud_esencial",      poliza:"POL-2026-1009", fechaSometimiento:"2026-03-10", fechaEmision:"2026-03-24", primaBasicaAnual:18,  primaExcesoAnual:0  }),
+  construirTransaccion({ colaborador:"Gisela",   cliente:"Ana Reyes",         productoId:"vive_ok",             poliza:"POL-2026-1010", fechaSometimiento:"2026-03-25", fechaEmision:"",           primaBasicaAnual:30,  primaExcesoAnual:0  })
 ];
 
 /* ==================== ESTADO / FILTROS ==================== */
@@ -645,6 +675,7 @@ function escapeHtml(str){
 function renderAll(){
   document.getElementById('totalRegistrosHeader').textContent = transactions.length;
   document.getElementById('contadorRegistros').textContent = transactions.length;
+  document.getElementById('contadorRegistrosTab').textContent = transactions.length;
   poblarSelectColaboradorFiltro();
   poblarDatalistColaboradores();
   poblarDatalistClientes();
@@ -784,22 +815,34 @@ function renderHistorial(){
 }
 
 /* ==================== EVENTOS: FILTROS ==================== */
+// Una vez guardado, el Valor UF del período queda BLOQUEADO (solo lectura) para evitar
+// modificaciones accidentales. Solo se puede editar de nuevo pasando por "Corregir" (con
+// confirmación), y se re-bloquea automáticamente al salir del campo. `ufDesbloqueado` se
+// resetea cada vez que cambia el período seleccionado.
+let ufDesbloqueado = false;
+
 function sincronizarInputValorUF(){
   const input = document.getElementById('filtroValorUF');
   const aviso = document.getElementById('filtroValorUFAviso');
-  const nota = document.getElementById('filtroValorUFNota');
+  const bloqueada = document.getElementById('filtroValorUFBloqueada');
+  const editando = document.getElementById('filtroValorUFEditando');
   const v = getValorUF(filtros.anio, filtros.mes);
+  aviso.classList.add('hidden');
+  bloqueada.classList.add('hidden');
+  editando.classList.add('hidden');
   if(v == null){
     input.value = "";
     input.disabled = true;
     input.placeholder = "Sin dato";
     aviso.classList.remove('hidden');
-    nota.classList.add('hidden');
-  } else {
+  } else if(ufDesbloqueado){
     input.disabled = false;
     input.value = v;
-    aviso.classList.add('hidden');
-    nota.classList.remove('hidden');
+    editando.classList.remove('hidden');
+  } else {
+    input.disabled = true;
+    input.value = v;
+    bloqueada.classList.remove('hidden');
   }
 }
 
@@ -855,12 +898,30 @@ function initFiltros(){
   sincronizarInputValorUF();
   document.getElementById('filtroPersistencia').value = filtros.persistencia;
 
-  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
-  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
+  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); ufDesbloqueado = false; sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
+  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); ufDesbloqueado = false; sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
   document.getElementById('filtroColaborador').addEventListener('change', e => { filtros.colaborador = e.target.value; renderAll(); });
   document.getElementById('filtroValorUF').addEventListener('input', e => {
     setValorUF(filtros.anio, filtros.mes, e.target.value);
     renderAll();
+  });
+  // Re-bloquea automáticamente apenas el usuario termina de corregir (blur / Enter).
+  document.getElementById('filtroValorUF').addEventListener('change', e => {
+    if(ufDesbloqueado){
+      ufDesbloqueado = false;
+      sincronizarInputValorUF();
+      const v = getValorUF(filtros.anio, filtros.mes);
+      toast(`Valor UF de ${MESES[filtros.mes-1]} ${filtros.anio} corregido a ${v != null ? fmtCLP(v) : '—'} y bloqueado de nuevo.`, "success");
+    }
+  });
+  document.getElementById('btnCorregirUF').addEventListener('click', () => {
+    const ok = confirm(`El Valor UF de ${MESES[filtros.mes-1]} ${filtros.anio} ya está guardado. ¿Seguro que quieres modificarlo? Hazlo solo si hubo un error al ingresarlo.`);
+    if(!ok) return;
+    ufDesbloqueado = true;
+    sincronizarInputValorUF();
+    const input = document.getElementById('filtroValorUF');
+    input.focus();
+    input.select();
   });
   document.getElementById('filtroPersistencia').addEventListener('input', e => {
     let v = Number(e.target.value); if(isNaN(v)) v = 0; v = Math.max(0, Math.min(100, v));
@@ -1175,11 +1236,29 @@ function initGuardarExcel(){
   });
 }
 
+/* ==================== VISTAS (PESTAÑAS: RESUMEN / COMPARATIVO / HISTORIAL) ==================== */
+function cambiarVista(vista){
+  ['resumen','comparativo','historial'].forEach(v => {
+    const seccion = document.getElementById('vista' + v.charAt(0).toUpperCase() + v.slice(1));
+    const tab = document.getElementById('tab' + v.charAt(0).toUpperCase() + v.slice(1));
+    seccion.classList.toggle('hidden', v !== vista);
+    tab.classList.toggle('vista-tab-activa', v === vista);
+    tab.classList.toggle('vista-tab-inactiva', v !== vista);
+  });
+}
+
+function initVistas(){
+  document.querySelectorAll('.vista-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => cambiarVista(btn.dataset.vista));
+  });
+}
+
 /* ==================== INIT ==================== */
 document.addEventListener('DOMContentLoaded', () => {
   initFiltros();
   initFormulario();
   initModalValorUF();
+  initVistas();
   initCargaExcel();
   initGuardarExcel();
   renderAll();
