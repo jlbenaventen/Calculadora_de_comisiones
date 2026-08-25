@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquidador de Comisiones de Seguros</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .fade-in { animation: fadeIn .25s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
+  .badge-agentes { background:#dbeafe; color:#1e40af; }
+  .badge-salud { background:#ccfbf1; color:#0f766e; }
+  .badge-contrato { background:#dcfce7; color:#166534; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+<!-- ==================== TOAST ==================== -->
+<div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80"></div>
+
+<!-- ==================== HEADER / NAVBAR ==================== -->
+<header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+  <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="bg-indigo-600 rounded-lg p-2.5">
+        <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-lg sm:text-xl font-bold leading-tight">Liquidador de Comisiones de Seguros</h1>
+        <p class="text-xs text-slate-400 flex items-center gap-1.5">
+          <span id="estadoDot" class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+          <span id="estadoTexto">Datos de ejemplo cargados &middot; <span id="totalRegistrosHeader">0</span> transacciones</span>
+        </p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
+      <button id="btnCargarExcel" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 transition text-sm font-medium px-3.5 py-2 rounded-lg">
+        <i class="fa-solid fa-upload"></i> <span class="hidden sm:inline">Cargar Excel</span>
+      </button>
+      <button id="btnGuardarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 transition text-sm font-medium px-3.5 py-2 rounded-lg">
+        <i class="fa-solid fa-file-arrow-down"></i> <span class="hidden sm:inline">Guardar en Excel</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 space-y-5">
+
+  <!-- ==================== FILTROS GLOBALES ==================== -->
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="flex items-center gap-2 mb-3 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+      <i class="fa-solid fa-sliders"></i> Filtros globales
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Año</label>
+        <select id="filtroAnio" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Mes</label>
+        <select id="filtroMes" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Colaborador</label>
+        <select id="filtroColaborador" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Valor UF de cierre ($)</label>
+        <input id="filtroValorUF" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Persistencia % del agente</label>
+        <input id="filtroPersistencia" type="number" step="0.01" min="0" max="100" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== KPIs ==================== -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total a pagar</span>
+        <i class="fa-solid fa-sack-dollar text-indigo-500"></i>
+      </div>
+      <p id="kpiTotalCLP" class="text-2xl font-bold text-slate-900 mt-2">$0</p>
+      <p id="kpiTotalUF" class="text-xs text-slate-500 mt-0.5">0,00 UF</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Prima de Productividad (PP)</span>
+        <i class="fa-solid fa-chart-line text-blue-500"></i>
+      </div>
+      <p id="kpiPP" class="text-2xl font-bold text-slate-900 mt-2">0,00 UF</p>
+      <p class="text-xs text-slate-500 mt-0.5">Régimen Agentes + Salud</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Bono Venta + Persistencia</span>
+        <i class="fa-solid fa-award text-amber-500"></i>
+      </div>
+      <p id="kpiBonoPersistencia" class="text-2xl font-bold text-slate-900 mt-2">0,00 UF</p>
+      <p class="text-xs text-slate-500 mt-0.5">Tope mensual: 65 UF</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Recaudación / Mantención</span>
+        <i class="fa-solid fa-coins text-emerald-500"></i>
+      </div>
+      <p id="kpiRecaudacion" class="text-2xl font-bold text-slate-900 mt-2">0,00 UF</p>
+      <p class="text-xs text-slate-500 mt-0.5">Cartera Agentes + Salud + Contrato</p>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-5">
+    <!-- ==================== FORMULARIO NUEVA TRANSACCION ==================== -->
+    <section class="xl:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-fit">
+      <div class="flex items-center gap-2 mb-3 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+        <i class="fa-solid fa-circle-plus"></i> Nueva transacción / póliza
+      </div>
+      <form id="formTransaccion" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Colaborador</label>
+          <input id="fColaborador" list="listaColaboradores" required placeholder="Ej: Carlos Mendoza" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          <datalist id="listaColaboradores"></datalist>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Año</label>
+            <select id="fAnio" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Mes</label>
+            <select id="fMes" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Producto</label>
+          <select id="fProducto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">N&deg; P&oacute;liza / Cliente</label>
+          <input id="fPoliza" required placeholder="Ej: POL-2026-0456 / Juan P&eacute;rez" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Prima B&aacute;sica Anual (UF)</label>
+            <input id="fPrimaBasica" type="number" step="0.01" min="0" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          </div>
+          <div id="wrapExceso">
+            <label class="block text-xs font-medium text-slate-500 mb-1">Prima Exceso Anual (UF)</label>
+            <input id="fPrimaExceso" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          </div>
+        </div>
+        <p id="formError" class="text-xs text-red-600 hidden"></p>
+        <button type="submit" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
+          <i class="fa-solid fa-plus"></i> Agregar transacción
+        </button>
+      </form>
+    </section>
+
+    <!-- ==================== DESGLOSE CONCEPTO POR CONCEPTO ==================== -->
+    <section class="xl:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+          <i class="fa-solid fa-list-check"></i> Desglose concepto por concepto
+        </div>
+        <span id="desgloseContexto" class="text-xs text-slate-400"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
+              <th class="py-2 pr-3">Concepto</th>
+              <th class="py-2 pr-3">Base</th>
+              <th class="py-2 pr-3">Tasa</th>
+              <th class="py-2 pr-3 text-right">Monto (UF)</th>
+              <th class="py-2 text-right">Monto (CLP)</th>
+            </tr>
+          </thead>
+          <tbody id="tablaDesglose" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== RANKING COMPARATIVO ==================== -->
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+        <i class="fa-solid fa-ranking-star"></i> Reporte comparativo / ranking de equipo
+      </div>
+      <span id="rankingContexto" class="text-xs text-slate-400"></span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[820px]">
+        <thead>
+          <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
+            <th class="py-2 pr-3">#</th>
+            <th class="py-2 pr-3">Colaborador</th>
+            <th class="py-2 pr-3 text-right">PP (UF)</th>
+            <th class="py-2 pr-3 text-right">Bono Venta (UF)</th>
+            <th class="py-2 pr-3 text-right">Persistencia (UF)</th>
+            <th class="py-2 pr-3 text-right">Recaudación (UF)</th>
+            <th class="py-2 pr-3 text-right">Total (UF)</th>
+            <th class="py-2 text-right">Total (CLP)</th>
+          </tr>
+        </thead>
+        <tbody id="tablaRanking" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== HISTORIAL DE TRANSACCIONES ==================== -->
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+        <i class="fa-solid fa-database"></i> Historial de transacciones (base de datos)
+      </div>
+      <span class="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-medium">
+        <span id="contadorRegistros">0</span> registros
+      </span>
+    </div>
+    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+      <table class="w-full text-sm min-w-[980px]">
+        <thead class="sticky top-0 bg-white">
+          <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
+            <th class="py-2 pr-3">Colaborador</th>
+            <th class="py-2 pr-3">Período</th>
+            <th class="py-2 pr-3">Régimen</th>
+            <th class="py-2 pr-3">Producto</th>
+            <th class="py-2 pr-3">Póliza / Cliente</th>
+            <th class="py-2 pr-3 text-right">P. Básica Anual (UF)</th>
+            <th class="py-2 pr-3 text-right">P. Exceso Anual (UF)</th>
+            <th class="py-2 text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tablaHistorial" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="text-center text-xs text-slate-400 py-4">
+    Liquidador de Comisiones de Seguros &middot; cálculos en memoria, datos persistidos en el Excel que t&uacute; cargues o descargues.
+  </footer>
+</main>
+
+<script>
+(function(){
+"use strict";
+
+/* ==================== CATÁLOGO DE PRODUCTOS Y REGLAS ==================== */
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const REGIMEN_LABEL = { agentes: "Nuevo Agentes", salud: "Nuevo Salud", contrato: "Tradicional Contrato" };
+const REGIMEN_BADGE = { agentes: "badge-agentes", salud: "badge-salud", contrato: "badge-contrato" };
+
+// Escala Bono de Venta sobre PP del mes (tramos, tasa única por tramo)
+const TRAMOS_BONO = [
+  { hasta: 49,        tasa: 0.045 },
+  { hasta: 72,         tasa: 0.056 },
+  { hasta: 100,        tasa: 0.064 },
+  { hasta: 145,        tasa: 0.074 },
+  { hasta: 200,        tasa: 0.086 },
+  { hasta: Infinity,   tasa: 0.100 }
+];
+const TOPE_BONO_VENTA_UF = 65;
+
+// Factor Premio por Persistencia (24 meses) según % de persistencia
+const TRAMOS_PERSISTENCIA = [
+  { desde: 97,   factor: 0.90 },
+  { desde: 95,   factor: 0.80 },
+  { desde: 92,   factor: 0.70 },
+  { desde: 88,   factor: 0.60 },
+  { desde: 83,   factor: 0.50 },
+  { desde: -Infinity, factor: 0.00 }
+];
+
+const PRODUCTS = [
+  { id:"ahorro_familiar",     nombre:"Ahorro Familiar",                          regimen:"agentes", usaExceso:true,  recBasica:0.195, recExceso:0.065, topeExceso:1.67 },
+  { id:"ahorro_universitario",nombre:"Ahorro Universitario",                     regimen:"agentes", usaExceso:true,  recBasica:0.195, recExceso:0.065, topeExceso:1.67 },
+  { id:"seguro_vida",         nombre:"Seguro de Vida",                           regimen:"agentes", usaExceso:false, recBasica:0.15 },
+  { id:"salud_catastrofico",  nombre:"Salud Catastrófico",                       regimen:"salud",   usaExceso:false, recBasica:0.045 },
+  { id:"salud_esencial",      nombre:"Salud Esencial",                           regimen:"salud",   usaExceso:false, recBasica:0.045 },
+  { id:"seguro_oncologico",   nombre:"Seguro Oncológico",                        regimen:"salud",   usaExceso:false, recBasica:0.045, topePPPoliza:6.5 },
+  { id:"ap_salud",            nombre:"AP Salud",                                 regimen:"salud",   usaExceso:false, recBasica:0.115 },
+  { id:"mi_proyecto",         nombre:"Mi Proyecto / APV Seguro",                 regimen:"contrato",usaExceso:true,  recBasica:0.19,  recExceso:0.03, topeRecaudacion:3 },
+  { id:"dominium",            nombre:"Dominium / APV Max / Max Universitario",   regimen:"contrato",usaExceso:true,  recBasica:0.25,  recExceso:0.04, topeRecaudacion:3 },
+  { id:"temporales",          nombre:"Temporales",                               regimen:"contrato",usaExceso:false, recBasica:0.32 },
+  { id:"vive_ok",             nombre:"Vive OK",                                  regimen:"contrato",usaExceso:false, recBasica:0.07 },
+  { id:"ap_contrato",         nombre:"AP",                                       regimen:"contrato",usaExceso:false, recBasica:0.16 }
+];
+const productById = id => PRODUCTS.find(p => p.id === id);
+const productByNombre = n => PRODUCTS.find(p => p.nombre === n);
+
+/* ==================== DATOS DE EJEMPLO (10 transacciones) ==================== */
+let transactions = [
+  { id: uid(), colaborador:"Carlos Mendoza",     anio:2026, mes:3, productoId:"ahorro_familiar",      poliza:"POL-2026-1001 / Fam. Rojas",     primaBasicaAnual:96,  primaExcesoAnual:24 },
+  { id: uid(), colaborador:"Carlos Mendoza",     anio:2026, mes:3, productoId:"seguro_vida",           poliza:"POL-2026-1002 / J. Herrera",     primaBasicaAnual:60,  primaExcesoAnual:0  },
+  { id: uid(), colaborador:"Carlos Mendoza",     anio:2026, mes:3, productoId:"salud_catastrofico",    poliza:"POL-2026-1003 / M. Soto",        primaBasicaAnual:14,  primaExcesoAnual:0  },
+  { id: uid(), colaborador:"Andrea Valenzuela",  anio:2026, mes:3, productoId:"ahorro_universitario",  poliza:"POL-2026-1004 / Fam. Contreras",  primaBasicaAnual:144, primaExcesoAnual:36 },
+  { id: uid(), colaborador:"Andrea Valenzuela",  anio:2026, mes:3, productoId:"seguro_oncologico",     poliza:"POL-2026-1005 / P. Fuentes",      primaBasicaAnual:9,   primaExcesoAnual:0  },
+  { id: uid(), colaborador:"Andrea Valenzuela",  anio:2026, mes:3, productoId:"ap_salud",              poliza:"POL-2026-1006 / R. Araya",        primaBasicaAnual:11,  primaExcesoAnual:0  },
+  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"dominium",              poliza:"POL-2026-1007 / L. Vergara",      primaBasicaAnual:180, primaExcesoAnual:60 },
+  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"temporales",            poliza:"POL-2026-1008 / C. Nuñez",        primaBasicaAnual:48,  primaExcesoAnual:0  },
+  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"salud_esencial",        poliza:"POL-2026-1009 / D. Pizarro",      primaBasicaAnual:18,  primaExcesoAnual:0  },
+  { id: uid(), colaborador:"Rodrigo Silva",      anio:2026, mes:3, productoId:"vive_ok",               poliza:"POL-2026-1010 / A. Reyes",        primaBasicaAnual:30,  primaExcesoAnual:0  }
+];
+
+function uid(){ return 'tx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9); }
+
+/* ==================== ESTADO / FILTROS ==================== */
+let filtros = {
+  anio: 2026,
+  mes: 3,
+  colaborador: "TODOS",
+  valorUF: 39000,
+  persistencia: 95
+};
+
+/* ==================== MOTOR DE CÁLCULO ==================== */
+function primaBasicaMensual(t){ return (Number(t.primaBasicaAnual)||0) / 12; }
+function primaExcesoMensual(t){ return (Number(t.primaExcesoAnual)||0) / 12; }
+
+function ppPoliza(t){
+  try {
+    const p = productById(t.productoId);
+    if(!p) return 0;
+    if(p.regimen === "agentes"){
+      return primaBasicaMensual(t) + 0.5 * primaExcesoMensual(t);
+    }
+    if(p.regimen === "salud"){
+      let pp = Number(t.primaBasicaAnual) || 0; // "Prima Básica anualizada" -> se usa el valor anual directo
+      if(p.topePPPoliza != null) pp = Math.min(pp, p.topePPPoliza);
+      return pp;
+    }
+    return 0; // Régimen Contrato no aporta a la Prima de Productividad
+  } catch(e){ console.error("Error calculando PP de póliza", t, e); return 0; }
+}
+
+function recaudacionPoliza(t){
+  try {
+    const p = productById(t.productoId);
+    if(!p) return 0;
+    const b = primaBasicaMensual(t);
+    const e = primaExcesoMensual(t);
+    if(p.id === "seguro_vida"){
+      return b * p.recBasica;
+    }
+    if(p.regimen === "agentes"){
+      const rb = b * p.recBasica;
+      const re = Math.min(e * p.recExceso, p.topeExceso ?? Infinity);
+      return rb + re;
+    }
+    if(p.regimen === "salud"){
+      return b * p.recBasica;
+    }
+    if(p.regimen === "contrato"){
+      if(p.usaExceso){
+        const raw = (b * p.recBasica) + (e * p.recExceso);
+        return Math.min(raw, p.topeRecaudacion ?? Infinity);
+      }
+      return b * p.recBasica;
+    }
+    return 0;
+  } catch(e){ console.error("Error calculando recaudación de póliza", t, e); return 0; }
+}
+
+function tasaBono(pp){
+  for(const tramo of TRAMOS_BONO){ if(pp <= tramo.hasta) return tramo.tasa; }
+  return TRAMOS_BONO[TRAMOS_BONO.length-1].tasa;
+}
+function factorPersistencia(pct){
+  for(const tramo of TRAMOS_PERSISTENCIA){ if(pct >= tramo.desde) return tramo.factor; }
+  return 0;
+}
+
+// Calcula el detalle de un colaborador en un año/mes específico.
+// IMPORTANTE: el tramo del Bono de Venta y su tope de 65 UF se evalúan POR COLABORADOR,
+// nunca sobre una PP ya sumada entre varios colaboradores (evita sobreestimar el bono consolidado).
+function calcularColaboradorMes(colaborador, anio, mes, persistenciaPct){
+  const txs = transactions.filter(t => t.colaborador === colaborador && Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes));
+  let pp = 0, recAgentesSalud = 0, recContrato = 0;
+  txs.forEach(t => {
+    const p = productById(t.productoId);
+    if(!p) return;
+    if(p.regimen === "contrato"){
+      recContrato += recaudacionPoliza(t);
+    } else {
+      pp += ppPoliza(t);
+      recAgentesSalud += recaudacionPoliza(t);
+    }
+  });
+  let bonoVenta = pp * tasaBono(pp);
+  bonoVenta = Math.min(bonoVenta, TOPE_BONO_VENTA_UF);
+  const premioPersistencia = bonoVenta * factorPersistencia(Number(persistenciaPct) || 0);
+  const recaudacion = recAgentesSalud + recContrato;
+  const total = bonoVenta + premioPersistencia + recaudacion;
+  return { colaborador, pp, bonoVenta, premioPersistencia, recAgentesSalud, recContrato, recaudacion, total, nTransacciones: txs.length };
+}
+
+function colaboradoresConDatos(anio, mes){
+  const set = new Set();
+  transactions.forEach(t => { if(Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes)) set.add(t.colaborador); });
+  return Array.from(set).sort((a,b) => a.localeCompare(b, 'es'));
+}
+
+function calcularVista(anio, mes, colaboradorFiltro, persistenciaPct){
+  if(colaboradorFiltro === "TODOS"){
+    const colaboradores = colaboradoresConDatos(anio, mes);
+    const detalles = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct));
+    const agg = detalles.reduce((acc, d) => {
+      acc.pp += d.pp; acc.bonoVenta += d.bonoVenta; acc.premioPersistencia += d.premioPersistencia;
+      acc.recAgentesSalud += d.recAgentesSalud; acc.recContrato += d.recContrato; acc.recaudacion += d.recaudacion; acc.total += d.total;
+      return acc;
+    }, { pp:0, bonoVenta:0, premioPersistencia:0, recAgentesSalud:0, recContrato:0, recaudacion:0, total:0 });
+    return { modo:"TODOS", agg, detalles };
+  }
+  const d = calcularColaboradorMes(colaboradorFiltro, anio, mes, persistenciaPct);
+  return { modo:"INDIVIDUAL", agg:d, detalles:[d] };
+}
+
+/* ==================== HELPERS DE FORMATO ==================== */
+const fmtUF = n => (Number(n)||0).toLocaleString('es-CL', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const fmtCLP = n => "$" + Math.round(Number(n)||0).toLocaleString('es-CL');
+const fmtPct = n => (Number(n)*100).toLocaleString('es-CL', { minimumFractionDigits:1, maximumFractionDigits:1 }) + "%";
+
+function toast(msg, tipo){
+  tipo = tipo || "info";
+  const colores = { info:"bg-slate-800", success:"bg-emerald-600", error:"bg-red-600" };
+  const icono = { info:"fa-circle-info", success:"fa-circle-check", error:"fa-triangle-exclamation" };
+  const div = document.createElement('div');
+  div.className = `fade-in text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-start gap-2 ${colores[tipo]}`;
+  div.innerHTML = `<i class="fa-solid ${icono[tipo]} mt-0.5"></i><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(div);
+  setTimeout(() => { div.style.transition = "opacity .3s"; div.style.opacity = "0"; setTimeout(() => div.remove(), 300); }, 4200);
+}
+
+/* ==================== POBLAR SELECTS ==================== */
+function anosDisponibles(){
+  const set = new Set([2026, 2027]);
+  transactions.forEach(t => set.add(Number(t.anio)));
+  return Array.from(set).sort((a,b) => a-b);
+}
+
+function poblarSelectAnio(select, valorActual){
+  select.innerHTML = "";
+  anosDisponibles().forEach(a => {
+    const opt = document.createElement('option'); opt.value = a; opt.textContent = a;
+    if(Number(valorActual) === a) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+function poblarSelectMes(select, valorActual){
+  select.innerHTML = "";
+  MESES.forEach((nombre, idx) => {
+    const opt = document.createElement('option'); opt.value = idx+1; opt.textContent = nombre;
+    if(Number(valorActual) === idx+1) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+function poblarSelectColaboradorFiltro(){
+  const select = document.getElementById('filtroColaborador');
+  const actual = filtros.colaborador;
+  const nombres = Array.from(new Set(transactions.map(t => t.colaborador))).sort((a,b) => a.localeCompare(b,'es'));
+  select.innerHTML = "";
+  const optTodos = document.createElement('option'); optTodos.value = "TODOS"; optTodos.textContent = "TODOS (consolidado)";
+  select.appendChild(optTodos);
+  nombres.forEach(n => {
+    const opt = document.createElement('option'); opt.value = n; opt.textContent = n;
+    select.appendChild(opt);
+  });
+  select.value = nombres.includes(actual) || actual === "TODOS" ? actual : "TODOS";
+  filtros.colaborador = select.value;
+}
+
+function poblarDatalistColaboradores(){
+  const dl = document.getElementById('listaColaboradores');
+  const nombres = Array.from(new Set(transactions.map(t => t.colaborador))).sort((a,b) => a.localeCompare(b,'es'));
+  dl.innerHTML = nombres.map(n => `<option value="${escapeHtml(n)}">`).join('');
+}
+
+function poblarSelectProducto(){
+  const select = document.getElementById('fProducto');
+  select.innerHTML = "";
+  ["agentes","salud","contrato"].forEach(reg => {
+    const grupo = document.createElement('optgroup');
+    grupo.label = "Régimen " + REGIMEN_LABEL[reg];
+    PRODUCTS.filter(p => p.regimen === reg).forEach(p => {
+      const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.nombre;
+      grupo.appendChild(opt);
+    });
+    select.appendChild(grupo);
+  });
+  actualizarVisibilidadExceso();
+}
+
+function actualizarVisibilidadExceso(){
+  const p = productById(document.getElementById('fProducto').value);
+  const wrap = document.getElementById('wrapExceso');
+  const input = document.getElementById('fPrimaExceso');
+  if(p && p.usaExceso){
+    wrap.classList.remove('hidden');
+  } else {
+    wrap.classList.add('hidden');
+    input.value = "";
+  }
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ==================== RENDER ==================== */
+function renderAll(){
+  document.getElementById('totalRegistrosHeader').textContent = transactions.length;
+  document.getElementById('contadorRegistros').textContent = transactions.length;
+  poblarSelectColaboradorFiltro();
+  poblarDatalistColaboradores();
+
+  const vista = calcularVista(filtros.anio, filtros.mes, filtros.colaborador, filtros.persistencia);
+  renderKPIs(vista);
+  renderDesglose(vista);
+  renderRanking(filtros.anio, filtros.mes, filtros.persistencia);
+  renderHistorial();
+}
+
+function renderKPIs(vista){
+  const a = vista.agg;
+  document.getElementById('kpiTotalCLP').textContent = fmtCLP(a.total * filtros.valorUF);
+  document.getElementById('kpiTotalUF').textContent = fmtUF(a.total) + " UF";
+  document.getElementById('kpiPP').textContent = fmtUF(a.pp) + " UF";
+  document.getElementById('kpiBonoPersistencia').textContent = fmtUF(a.bonoVenta + a.premioPersistencia) + " UF";
+  document.getElementById('kpiRecaudacion').textContent = fmtUF(a.recaudacion) + " UF";
+}
+
+function renderDesglose(vista){
+  const a = vista.agg;
+  const ctx = vista.modo === "TODOS"
+    ? `Consolidado equipo &middot; ${MESES[filtros.mes-1]} ${filtros.anio}`
+    : `${escapeHtml(filtros.colaborador)} &middot; ${MESES[filtros.mes-1]} ${filtros.anio}`;
+  document.getElementById('desgloseContexto').innerHTML = ctx;
+
+  const tasa = tasaBono(a.pp);
+  const factorPers = factorPersistencia(Number(filtros.persistencia)||0);
+  const filas = [
+    { concepto:"Prima de Productividad (PP)", base:"Suma primas Agentes + Salud del mes", tasa:"—", uf:a.pp },
+    { concepto:"Bono de Venta", base:`PP = ${fmtUF(a.pp)} UF (tramo ≤ ${TRAMOS_BONO.find(t=>a.pp<=t.hasta)?.hasta === Infinity ? '∞' : TRAMOS_BONO.find(t=>a.pp<=t.hasta)?.hasta})`, tasa: fmtPct(tasa) + (a.bonoVenta >= TOPE_BONO_VENTA_UF && a.pp*tasa > TOPE_BONO_VENTA_UF ? " (topado 65 UF)" : ""), uf:a.bonoVenta },
+    { concepto:"Premio por Persistencia (24 meses)", base:`Bono Venta = ${fmtUF(a.bonoVenta)} UF · Persistencia ${filtros.persistencia}%`, tasa: fmtPct(factorPers), uf:a.premioPersistencia },
+    { concepto:"Recaudación / Mantención — Agentes y Salud", base:"Prima básica/exceso mensual de pólizas Agentes + Salud", tasa:"según producto", uf:a.recAgentesSalud },
+    { concepto:"Recaudación / Mantención — Contrato Tradicional", base:"Prima básica/exceso mensual de pólizas Contrato", tasa:"según producto", uf:a.recContrato }
+  ];
+  const tbody = document.getElementById('tablaDesglose');
+  tbody.innerHTML = filas.map(f => `
+    <tr class="fade-in">
+      <td class="py-2 pr-3 font-medium text-slate-700">${f.concepto}</td>
+      <td class="py-2 pr-3 text-slate-500 text-xs">${f.base}</td>
+      <td class="py-2 pr-3 text-slate-500 text-xs">${f.tasa}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.uf)}</td>
+      <td class="py-2 text-right tabular-nums">${fmtCLP(f.uf * filtros.valorUF)}</td>
+    </tr>`).join('') + `
+    <tr class="fade-in bg-slate-50 font-bold">
+      <td class="py-2 pr-3" colspan="3">Total a pagar</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(a.total)}</td>
+      <td class="py-2 text-right tabular-nums">${fmtCLP(a.total * filtros.valorUF)}</td>
+    </tr>`;
+}
+
+function renderRanking(anio, mes, persistenciaPct){
+  document.getElementById('rankingContexto').textContent = `${MESES[mes-1]} ${anio}`;
+  const colaboradores = colaboradoresConDatos(anio, mes);
+  const filas = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct)).sort((x,y) => y.total - x.total);
+  const tbody = document.getElementById('tablaRanking');
+  if(filas.length === 0){
+    tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 text-sm">Sin transacciones para ${MESES[mes-1]} ${anio}.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filas.map((f, i) => `
+    <tr class="fade-in hover:bg-slate-50 ${f.colaborador === filtros.colaborador ? 'bg-indigo-50/60' : ''}">
+      <td class="py-2 pr-3 text-slate-400">${i+1}</td>
+      <td class="py-2 pr-3 font-medium text-slate-700">${escapeHtml(f.colaborador)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.pp)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.bonoVenta)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.premioPersistencia)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.recaudacion)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums font-semibold">${fmtUF(f.total)}</td>
+      <td class="py-2 text-right tabular-nums">${fmtCLP(f.total * filtros.valorUF)}</td>
+    </tr>`).join('');
+}
+
+function renderHistorial(){
+  const tbody = document.getElementById('tablaHistorial');
+  if(transactions.length === 0){
+    tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 text-sm">No hay transacciones cargadas. Agrega una con el formulario o carga un Excel.</td></tr>`;
+    return;
+  }
+  const ordenado = [...transactions].sort((a,b) => (b.anio - a.anio) || (b.mes - a.mes) || a.colaborador.localeCompare(b.colaborador,'es'));
+  tbody.innerHTML = ordenado.map(t => {
+    const p = productById(t.productoId);
+    const regimen = p ? p.regimen : "—";
+    return `
+    <tr class="fade-in hover:bg-slate-50">
+      <td class="py-2 pr-3 font-medium text-slate-700">${escapeHtml(t.colaborador)}</td>
+      <td class="py-2 pr-3 text-slate-500">${MESES[t.mes-1] || t.mes} ${t.anio}</td>
+      <td class="py-2 pr-3"><span class="text-xs font-medium px-2 py-0.5 rounded-full ${REGIMEN_BADGE[regimen]||''}">${REGIMEN_LABEL[regimen]||regimen}</span></td>
+      <td class="py-2 pr-3">${p ? escapeHtml(p.nombre) : '<span class="text-red-500">Producto desconocido</span>'}</td>
+      <td class="py-2 pr-3 text-slate-500">${escapeHtml(t.poliza||'')}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(t.primaBasicaAnual)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${t.primaExcesoAnual ? fmtUF(t.primaExcesoAnual) : '—'}</td>
+      <td class="py-2 text-center">
+        <button data-id="${t.id}" class="btnEliminar text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md w-8 h-8 inline-flex items-center justify-center transition" title="Eliminar">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.btnEliminar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      transactions = transactions.filter(t => t.id !== id);
+      toast("Transacción eliminada.", "info");
+      renderAll();
+    });
+  });
+}
+
+/* ==================== EVENTOS: FILTROS ==================== */
+function initFiltros(){
+  poblarSelectAnio(document.getElementById('filtroAnio'), filtros.anio);
+  poblarSelectMes(document.getElementById('filtroMes'), filtros.mes);
+  poblarSelectColaboradorFiltro();
+  document.getElementById('filtroValorUF').value = filtros.valorUF;
+  document.getElementById('filtroPersistencia').value = filtros.persistencia;
+
+  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); renderAll(); });
+  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); renderAll(); });
+  document.getElementById('filtroColaborador').addEventListener('change', e => { filtros.colaborador = e.target.value; renderAll(); });
+  document.getElementById('filtroValorUF').addEventListener('input', e => { filtros.valorUF = Number(e.target.value) || 0; renderAll(); });
+  document.getElementById('filtroPersistencia').addEventListener('input', e => {
+    let v = Number(e.target.value); if(isNaN(v)) v = 0; v = Math.max(0, Math.min(100, v));
+    filtros.persistencia = v; renderAll();
+  });
+}
+
+/* ==================== EVENTOS: FORMULARIO ==================== */
+function initFormulario(){
+  poblarSelectAnio(document.getElementById('fAnio'), filtros.anio);
+  poblarSelectMes(document.getElementById('fMes'), filtros.mes);
+  poblarSelectProducto();
+
+  document.getElementById('fProducto').addEventListener('change', actualizarVisibilidadExceso);
+
+  document.getElementById('formTransaccion').addEventListener('submit', e => {
+    e.preventDefault();
+    const errorEl = document.getElementById('formError');
+    errorEl.classList.add('hidden');
+    try {
+      const colaborador = document.getElementById('fColaborador').value.trim();
+      const anio = Number(document.getElementById('fAnio').value);
+      const mes = Number(document.getElementById('fMes').value);
+      const productoId = document.getElementById('fProducto').value;
+      const poliza = document.getElementById('fPoliza').value.trim();
+      const primaBasicaAnual = Number(document.getElementById('fPrimaBasica').value);
+      const p = productById(productoId);
+      const primaExcesoAnual = (p && p.usaExceso) ? (Number(document.getElementById('fPrimaExceso').value) || 0) : 0;
+
+      if(!colaborador) throw new Error("Ingresa el nombre del colaborador.");
+      if(!poliza) throw new Error("Ingresa el N° de póliza o cliente.");
+      if(!p) throw new Error("Selecciona un producto válido.");
+      if(isNaN(primaBasicaAnual) || primaBasicaAnual <= 0) throw new Error("La Prima Básica Anual debe ser un número mayor a 0.");
+
+      transactions.push({ id: uid(), colaborador, anio, mes, productoId, poliza, primaBasicaAnual, primaExcesoAnual });
+      toast(`Transacción agregada para ${escapeHtml(colaborador)}.`, "success");
+      document.getElementById('formTransaccion').reset();
+      poblarSelectAnio(document.getElementById('fAnio'), filtros.anio);
+      poblarSelectMes(document.getElementById('fMes'), filtros.mes);
+      poblarSelectProducto();
+      renderAll();
+    } catch(err){
+      errorEl.textContent = err.message || "No se pudo agregar la transacción.";
+      errorEl.classList.remove('hidden');
+    }
+  });
+}
+
+/* ==================== CARGA DE EXCEL (SheetJS) ==================== */
+const ENCABEZADOS_ESPERADOS = {
+  colaborador: ["colaborador","agente","nombre colaborador"],
+  anio: ["año","ano","year","anio"],
+  mes: ["mes","month"],
+  producto: ["producto","product"],
+  poliza: ["n° póliza/cliente","n° poliza/cliente","poliza","póliza","n° póliza","cliente","poliza/cliente"],
+  primaBasicaAnual: ["prima básica anual (uf)","prima basica anual (uf)","prima básica anual","prima basica anual","prima básica (uf)","prima basica"],
+  primaExcesoAnual: ["prima exceso anual (uf)","prima exceso anual","prima exceso (uf)","prima exceso"]
+};
+
+function normalizarEncabezado(str){
+  return String(str||"").trim().toLowerCase();
+}
+
+function mapearFila(fila){
+  const claves = Object.keys(fila);
+  const buscar = (opciones) => {
+    for(const clave of claves){
+      if(opciones.includes(normalizarEncabezado(clave))) return fila[clave];
+    }
+    return undefined;
+  };
+  const colaborador = String(buscar(ENCABEZADOS_ESPERADOS.colaborador) ?? "").trim();
+  const anio = Number(buscar(ENCABEZADOS_ESPERADOS.anio));
+  let mes = buscar(ENCABEZADOS_ESPERADOS.mes);
+  if(typeof mes === "string"){
+    const idx = MESES.findIndex(m => m.toLowerCase() === mes.trim().toLowerCase());
+    mes = idx >= 0 ? idx+1 : Number(mes);
+  } else {
+    mes = Number(mes);
+  }
+  const nombreProducto = String(buscar(ENCABEZADOS_ESPERADOS.producto) ?? "").trim();
+  const producto = productByNombre(nombreProducto) || PRODUCTS.find(p => p.id === nombreProducto);
+  const poliza = String(buscar(ENCABEZADOS_ESPERADOS.poliza) ?? "").trim();
+  const primaBasicaAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaBasicaAnual));
+  const primaExcesoAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaExcesoAnual)) || 0;
+
+  if(!colaborador || !anio || !mes || !producto || isNaN(primaBasicaAnual)) return null;
+
+  return { id: uid(), colaborador, anio, mes, productoId: producto.id, poliza, primaBasicaAnual, primaExcesoAnual };
+}
+
+function initCargaExcel(){
+  const fileInput = document.getElementById('fileInput');
+  document.getElementById('btnCargarExcel').addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onerror = () => toast("No se pudo leer el archivo seleccionado.", "error");
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(data, { type: "array" });
+        const nombreHoja = wb.SheetNames.includes("Registro_Ventas") ? "Registro_Ventas" : wb.SheetNames[0];
+        const ws = wb.Sheets[nombreHoja];
+        if(!ws) throw new Error("El archivo no contiene hojas legibles.");
+        const filas = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        if(filas.length === 0) throw new Error("La hoja está vacía o no tiene datos.");
+
+        const nuevas = [];
+        let descartadas = 0;
+        filas.forEach(fila => {
+          const tx = mapearFila(fila);
+          if(tx) nuevas.push(tx); else descartadas++;
+        });
+
+        if(nuevas.length === 0) throw new Error("No se reconoció ninguna fila válida. Verifica los encabezados: Colaborador, Año, Mes, Producto, N° Póliza/Cliente, Prima Básica Anual (UF), Prima Exceso Anual (UF).");
+
+        transactions = nuevas;
+        renderAll();
+        poblarSelectAnio(document.getElementById('fAnio'), filtros.anio);
+        poblarSelectMes(document.getElementById('fMes'), filtros.mes);
+        toast(`Se cargaron ${nuevas.length} transacciones desde "${file.name}"${descartadas ? ` (${descartadas} filas descartadas por datos incompletos)` : ""}.`, "success");
+      } catch(err){
+        console.error("Error al procesar el Excel", err);
+        toast("Error al leer el Excel: " + (err.message || "formato no reconocido."), "error");
+      } finally {
+        fileInput.value = "";
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/* ==================== GUARDAR EXCEL (SheetJS) ==================== */
+function initGuardarExcel(){
+  document.getElementById('btnGuardarExcel').addEventListener('click', () => {
+    try {
+      if(transactions.length === 0){
+        toast("No hay transacciones para exportar.", "error");
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+
+      const filasRegistro = transactions.map(t => {
+        const p = productById(t.productoId);
+        return {
+          "Colaborador": t.colaborador,
+          "Año": t.anio,
+          "Mes": MESES[t.mes-1] || t.mes,
+          "Régimen": p ? REGIMEN_LABEL[p.regimen] : "",
+          "Producto": p ? p.nombre : t.productoId,
+          "N° Póliza/Cliente": t.poliza,
+          "Prima Básica Anual (UF)": Number(t.primaBasicaAnual) || 0,
+          "Prima Exceso Anual (UF)": Number(t.primaExcesoAnual) || 0
+        };
+      });
+      const wsRegistro = XLSX.utils.json_to_sheet(filasRegistro);
+      XLSX.utils.book_append_sheet(wb, wsRegistro, "Registro_Ventas");
+
+      const colaboradores = colaboradoresConDatos(filtros.anio, filtros.mes);
+      const filasResumen = colaboradores
+        .map(c => calcularColaboradorMes(c, filtros.anio, filtros.mes, filtros.persistencia))
+        .sort((a,b) => b.total - a.total)
+        .map(d => ({
+          "Colaborador": d.colaborador,
+          "PP (UF)": Number(d.pp.toFixed(2)),
+          "Bono Venta (UF)": Number(d.bonoVenta.toFixed(2)),
+          "Premio Persistencia (UF)": Number(d.premioPersistencia.toFixed(2)),
+          "Recaudación (UF)": Number(d.recaudacion.toFixed(2)),
+          "Total (UF)": Number(d.total.toFixed(2)),
+          "Total (CLP aprox)": Math.round(d.total * filtros.valorUF)
+        }));
+      const wsResumen = XLSX.utils.json_to_sheet(filasResumen.length ? filasResumen : [{ "Aviso": `Sin transacciones para ${MESES[filtros.mes-1]} ${filtros.anio}` }]);
+      XLSX.utils.book_append_sheet(wb, wsResumen, `Resumen_${MESES[filtros.mes-1]}_${filtros.anio}`);
+
+      const wsParametros = XLSX.utils.json_to_sheet([{
+        "Valor UF de cierre ($)": filtros.valorUF,
+        "Persistencia % del agente": filtros.persistencia,
+        "Año filtro": filtros.anio,
+        "Mes filtro": MESES[filtros.mes-1],
+        "Generado": new Date().toLocaleString('es-CL')
+      }]);
+      XLSX.utils.book_append_sheet(wb, wsParametros, "Parametros");
+
+      const nombreArchivo = `Liquidacion_Comisiones_${MESES[filtros.mes-1]}_${filtros.anio}.xlsx`;
+      XLSX.writeFile(wb, nombreArchivo);
+      toast(`Excel generado: ${nombreArchivo}`, "success");
+    } catch(err){
+      console.error("Error al generar el Excel", err);
+      toast("Error al generar el Excel: " + (err.message || "intenta nuevamente."), "error");
+    }
+  });
+}
+
+/* ==================== INIT ==================== */
+document.addEventListener('DOMContentLoaded', () => {
+  initFiltros();
+  initFormulario();
+  initCargaExcel();
+  initGuardarExcel();
+  renderAll();
+});
+
+})();
+</script>
+</body>
+</html>
