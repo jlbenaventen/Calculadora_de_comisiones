@@ -69,7 +69,7 @@
       <i class="fa-solid fa-sliders"></i> Filtros globales
       <span class="normal-case font-normal text-slate-400">&middot; Año y Mes se calculan sobre la Fecha de Emisión</span>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">Año (Emisión)</label>
         <select id="filtroAnio" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></select>
@@ -98,8 +98,30 @@
         </p>
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">Persistencia % del agente</label>
-        <input id="filtroPersistencia" type="number" step="0.01" min="0" max="100" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        <label class="block text-xs font-medium text-slate-500 mb-1">Fecha de ingreso a la Compañía</label>
+        <input id="filtroFechaIngreso" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-slate-50 disabled:text-slate-400">
+        <p id="filtroFechaIngresoTodos" class="text-[11px] text-slate-400 mt-1 hidden">
+          <i class="fa-solid fa-users"></i> Selecciona un colaborador para ingresar su fecha de ingreso.
+        </p>
+        <p id="filtroFechaIngresoAviso" class="text-[11px] text-amber-600 font-medium mt-1 hidden">
+          <i class="fa-solid fa-triangle-exclamation"></i> Sin fecha de ingreso — la Persistencia no se puede calcular hasta que la ingreses.
+        </p>
+      </div>
+      <div class="col-span-2 md:col-span-3 lg:col-span-4">
+        <label class="block text-xs font-medium text-slate-500 mb-1">Persistencia % del colaborador este mes — calculada automáticamente desde el estado real de sus pólizas (Vigente/No Vigente/Siniestrada) y su antigüedad en la Compañía. Agentes y Salud son anexos de contrato distintos, cada uno con su propia Persistencia (verificado contra Agentes.pdf y Salud.pdf)</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl">
+          <div class="border border-slate-200 rounded-lg px-3 py-2 bg-slate-50">
+            <p id="infoPersistenciaAgentes" class="text-sm font-semibold text-slate-700">—</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Ahorro Familiar/Universitario, Seguro de Vida</p>
+          </div>
+          <div class="border border-slate-200 rounded-lg px-3 py-2 bg-slate-50">
+            <p id="infoPersistenciaSalud" class="text-sm font-semibold text-slate-700">—</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Catastrófico, Oncológico, AP, etc.</p>
+          </div>
+        </div>
+        <p id="filtroPersistenciaTodos" class="text-[11px] text-slate-400 mt-1 hidden">
+          <i class="fa-solid fa-users"></i> Selecciona un colaborador para ver el detalle de su persistencia aquí, o revisa a todos a la vez en Reporte comparativo.
+        </p>
       </div>
     </div>
   </section>
@@ -131,7 +153,7 @@
         <i class="fa-solid fa-award text-amber-500"></i>
       </div>
       <p id="kpiBonoPersistencia" class="text-2xl font-bold text-slate-900 mt-2">0,00 UF</p>
-      <p class="text-xs text-slate-500 mt-0.5">Tope mensual: 65 UF</p>
+      <p class="text-xs text-slate-500 mt-0.5">Tope: 65 UF por régimen (Agentes y Salud, cada uno por separado)</p>
     </div>
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
       <div class="flex items-center justify-between">
@@ -193,13 +215,15 @@
       <span id="rankingContexto" class="text-xs text-slate-400"></span>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm min-w-[920px]">
+      <table class="w-full text-sm min-w-[1180px]">
         <thead>
           <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
             <th class="py-2 pr-3">#</th>
             <th class="py-2 pr-3">Colaborador</th>
             <th class="py-2 pr-3 text-right">PP (UF)</th>
             <th class="py-2 pr-3 text-right">Bono Venta (UF)</th>
+            <th class="py-2 pr-3 text-right">Persist. % Agentes</th>
+            <th class="py-2 pr-3 text-right">Persist. % Salud</th>
             <th class="py-2 pr-3 text-right">Persistencia (UF)</th>
             <th class="py-2 pr-3 text-right">Recaudación (UF)</th>
             <th class="py-2 pr-3 text-right">Comisión Capital (UF)</th>
@@ -337,7 +361,27 @@
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">k (Capital, UF)</label>
         <input id="fK" type="number" step="0.01" min="0" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-        <p class="text-[11px] text-slate-400 mt-1">Ingresa 0 si la póliza no tiene Capital. Se guarda; esta calculadora todavía no calcula la Comisión Capital a partir de este valor.</p>
+        <p class="text-[11px] text-slate-400 mt-1">Ingresa 0 si la póliza no tiene Capital. Se usa para la Comisión por Capital (Contrato Tradicional, Tabla 3.2).</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Estado de la p&oacute;liza</label>
+          <select id="fEstado" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+            <option value="vigente">Vigente</option>
+            <option value="no_vigente">No vigente</option>
+            <option value="siniestrada">Siniestrada</option>
+          </select>
+        </div>
+        <div id="wrapFechaTermino" class="hidden">
+          <label class="block text-xs font-medium text-slate-500 mb-1">Fecha T&eacute;rmino</label>
+          <input id="fFechaTermino" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+      </div>
+      <p class="text-[11px] text-slate-400 -mt-2">Estado y Fecha Término determinan si la póliza sigue generando Recaudación/Mantención y cómo se clasifica en el indicador de Persistencia (Vigente/No Vigente/Siniestrada — verificado contra Agentes.pdf, Salud.pdf y CONTRATO.pdf).</p>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Endoso neto acumulado (UFA)</label>
+        <input id="fEndosoNeto" type="number" step="0.01" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" placeholder="0">
+        <p class="text-[11px] text-slate-400 mt-1">Déjalo en 0 si la póliza no ha tenido endosos. Puede ser negativo (disminución).</p>
       </div>
       <p id="formError" class="text-xs text-red-600 hidden"></p>
       <button type="submit" id="btnGuardarTransaccion" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
@@ -382,7 +426,7 @@
    del usuario, sin servidor que valide nada) - es solo un aviso de vigencia basado en el
    reloj del propio computador, pensado para avisar cuándo toca pedir una versión nueva,
    no como medida de seguridad contra alguien que decida cambiar la fecha de su equipo. */
-const APP_VERSION = "V1.3";
+const APP_VERSION = "V1.7";
 const FECHA_LANZAMIENTO_VERSION = "2026-08-25"; // fecha en que se generó esta versión
 const DIAS_VIGENCIA_VERSION = 45;
 
@@ -433,15 +477,53 @@ const TRAMOS_BONO = [
 ];
 const TOPE_BONO_VENTA_UF = 65;
 
-// Factor Premio por Persistencia (24 meses) según % de persistencia
-const TRAMOS_PERSISTENCIA = [
-  { desde: 97,   factor: 0.90 },
-  { desde: 95,   factor: 0.80 },
-  { desde: 92,   factor: 0.70 },
-  { desde: 88,   factor: 0.60 },
-  { desde: 83,   factor: 0.50 },
-  { desde: -Infinity, factor: 0.00 }
+// Factor Premio por Persistencia (24 meses) según % del indicador Y la antigüedad del colaborador
+// en la Compañía - verificado con la IMAGEN de la Tabla 3 tanto en Agentes.pdf como en Salud.pdf
+// (son idénticas en ambos anexos: 4 tablas, una por tramo de antigüedad).
+const TRAMOS_PERSISTENCIA_POR_ANTIGUEDAD = {
+  hasta3: [ { desde: 100, factor: 0.50 }, { desde: -Infinity, factor: 0.00 } ],
+  "4a6":  [ { desde: 95,  factor: 0.50 }, { desde: -Infinity, factor: 0.00 } ],
+  "7a12": [ { desde: 96,  factor: 0.70 }, { desde: 93, factor: 0.60 }, { desde: 90, factor: 0.50 }, { desde: -Infinity, factor: 0.00 } ],
+  "13omas": [ { desde: 97, factor: 0.90 }, { desde: 95, factor: 0.80 }, { desde: 92, factor: 0.70 }, { desde: 88, factor: 0.60 }, { desde: 83, factor: 0.50 }, { desde: -Infinity, factor: 0.00 } ]
+};
+// Tramo de antigüedad (Tabla 3) según meses transcurridos desde la Fecha de Ingreso del colaborador.
+function tramoAntiguedadPersistencia(mesesAntiguedad){
+  if(mesesAntiguedad == null) return null;
+  if(mesesAntiguedad <= 3) return "hasta3";
+  if(mesesAntiguedad <= 6) return "4a6";
+  if(mesesAntiguedad <= 12) return "7a12";
+  return "13omas";
+}
+function factorPersistencia(pct, tramoAntiguedad){
+  const tabla = TRAMOS_PERSISTENCIA_POR_ANTIGUEDAD[tramoAntiguedad] || TRAMOS_PERSISTENCIA_POR_ANTIGUEDAD.hasta3;
+  for(const tramo of tabla){ if(pct >= tramo.desde) return tramo.factor; }
+  return 0;
+}
+
+// Premio por emisión o formalización mensual (Tabla 2, Régimen Contrato) - bonificación marginal
+// creciente sobre la UFA total emitida por el colaborador en Contrato durante el mes, cuyo resultado
+// se aplica como % adicional sobre el total de Comisión por Suscripción del mes. Verificado contra
+// el ejemplo del propio CONTRATO.pdf: UFA total 200 -> factor 11,25%.
+const TRAMOS_EMISION_CONTRATO = [
+  { desde: 0,   hasta: 100,      tasa: 0 },
+  { desde: 100, hasta: 150,      tasa: 0.20 },
+  { desde: 150, hasta: 200,      tasa: 0.25 },
+  { desde: 200, hasta: 300,      tasa: 0.35 },
+  { desde: 300, hasta: Infinity, tasa: 0.45 }
 ];
+function factorEmisionMensualContrato(ufaTotalMes){
+  const total = Number(ufaTotalMes) || 0;
+  if(total <= 0) return 0;
+  let restante = total, suma = 0;
+  for(const tramo of TRAMOS_EMISION_CONTRATO){
+    if(restante <= 0) break;
+    const ancho = tramo.hasta - tramo.desde;
+    const monto = Math.min(restante, ancho);
+    suma += monto * tramo.tasa;
+    restante -= monto;
+  }
+  return suma / total;
+}
 
 // Comisión por Capital (Régimen Contrato) - Tabla 3.2 del CONTRATO.pdf, tramos marginales (por mil, ‰)
 // sobre el "capital equivalente" del mes (que en esta calculadora es el valor k que se ingresa
@@ -460,7 +542,8 @@ const TOPE_COMISION_CAPITAL_UF = 75; // tope mensual explícito del contrato (Cl
 // Aplica la Tabla 3.2 de forma marginal (por tramos) sobre el capital equivalente total del mes,
 // no sobre cada póliza por separado - así lo hace el ejemplo del propio contrato.
 // Verificado contra el ejemplo del PDF: capital equivalente 8.205 UF -> comisión 19,7 UF.
-function comisionCapitalDesdeK(capitalEquivalenteTotal){
+// factorProductividad: 1.05 si aplica el Premio por Productividad (Cláusula I.5), 1 si no.
+function comisionCapitalDesdeK(capitalEquivalenteTotal, factorProductividad){
   let restante = Number(capitalEquivalenteTotal) || 0;
   if(restante <= 0) return 0;
   let total = 0;
@@ -471,7 +554,70 @@ function comisionCapitalDesdeK(capitalEquivalenteTotal){
     total += monto * (tramo.tasaPorMil / 1000);
     restante -= monto;
   }
+  total = total * (Number(factorProductividad) || 1);
   return Math.min(total, TOPE_COMISION_CAPITAL_UF);
+}
+
+// ==================== TABLA 7: BONO POR TAMAÑO DE CARTERA (Contrato, Cláusula II.2) ====================
+// Fórmula distinta según el tramo de antigüedad del colaborador en la Compañía, exige una Permanencia
+// mínima por tramo (si no se alcanza, el bono es 0). IMPORTANTE - verificado con el ejemplo numérico
+// del propio CONTRATO.pdf (agente de 26 meses, FlujoUF=25, Permanencia=85%: Bono = 9.000 x 25^1,1 x
+// 0,85^7 = $99.517): el resultado es un monto EN PESOS directamente, no en UF. Por eso esta calculadora
+// lo guarda y muestra aparte, en pesos, en vez de sumarlo al total en UF del resto de los conceptos.
+const TRAMOS_TAMANO_CARTERA = [
+  { hastaMeses: 12,       permanenciaMin: 90, factor: 19000, expFlujo: 0.4,  expPermanencia: 1  },
+  { hastaMeses: 24,       permanenciaMin: 85, factor: 13000, expFlujo: 0.8,  expPermanencia: 4  },
+  { hastaMeses: 36,       permanenciaMin: 80, factor: 9000,  expFlujo: 1.1,  expPermanencia: 7  },
+  { hastaMeses: Infinity, permanenciaMin: 70, factor: 6700,  expFlujo: 1.25, expPermanencia: 10 }
+];
+function bonoTamanoCartera(antiguedadMeses, flujoUF, permanenciaPct){
+  if(antiguedadMeses == null) return { bono: 0, motivo: "sin fecha de ingreso del colaborador" };
+  if(permanenciaPct == null) return { bono: 0, motivo: "sin Permanencia calculable (sin cartera Contrato suficiente)" };
+  const tramo = TRAMOS_TAMANO_CARTERA.find(t => antiguedadMeses <= t.hastaMeses);
+  if(permanenciaPct < tramo.permanenciaMin) return { bono: 0, motivo: `Permanencia ${fmtUF(permanenciaPct)}% bajo el mínimo exigido (${tramo.permanenciaMin}%) para su tramo de antigüedad`, tramo };
+  if(flujoUF <= 0) return { bono: 0, motivo: "sin flujo de Recaudación/Mantención Contrato este mes", tramo };
+  const bono = tramo.factor * Math.pow(flujoUF, tramo.expFlujo) * Math.pow(permanenciaPct/100, tramo.expPermanencia);
+  return { bono, motivo: null, tramo };
+}
+
+// ==================== TABLA 8: PREMIO ANUAL POR PERMANENCIA DE LA CARTERA (Contrato, Cláusula II.3) ====================
+// Requiere Permanencia >= 88% y antigüedad >= 12 meses; tope UF 41; según CONTRATO.pdf se paga UNA
+// vez al año calendario, evaluado en enero o septiembre "según el mes de ingreso del trabajador".
+// Simplificación documentada (el contrato no detalla la regla exacta de asignación mes a mes): esta
+// calculadora asume el criterio semestral habitual - ingreso Ene-Ago se evalúa en Septiembre de ese
+// año; ingreso Sep-Dic se evalúa en Enero del año siguiente. Se muestra siempre como tal en la UI.
+const TABLA_8 = [
+  { primaMin: 750, premios: [8, 12, 16, 21, 25] },
+  { primaMin: 850, premios: [16, 21, 25, 29, 33] },
+  { primaMin: 950, premios: [25, 29, 33, 37, 41] }
+];
+const TOPE_PREMIO_PERMANENCIA_UF = 41;
+function tramoPermanenciaTabla8(permanenciaPct){
+  if(permanenciaPct >= 97) return 4;
+  if(permanenciaPct >= 95) return 3;
+  if(permanenciaPct >= 92) return 2;
+  if(permanenciaPct >= 90) return 1;
+  if(permanenciaPct >= 88) return 0;
+  return -1;
+}
+function premioPermanenciaAnualUF(primaAnualizadaUFA, permanenciaPct, antiguedadMeses){
+  if(antiguedadMeses == null || antiguedadMeses < 12) return 0;
+  if(permanenciaPct == null || permanenciaPct < 88) return 0;
+  const idx = tramoPermanenciaTabla8(permanenciaPct);
+  if(idx < 0) return 0;
+  let fila = null;
+  for(const f of TABLA_8){ if(primaAnualizadaUFA > f.primaMin) fila = f; }
+  if(!fila) return 0; // cartera bajo 750 UFA anualizada: tabla no cubre ese tramo, sin premio
+  return Math.min(fila.premios[idx], TOPE_PREMIO_PERMANENCIA_UF);
+}
+// ¿Es (anio, mes) el mes de evaluación anual de Tabla 8 para este colaborador? Ver nota de
+// simplificación arriba - regla semestral basada en su mes de Fecha de Ingreso.
+function esMesEvaluacionTabla8(colaborador, anio, mes){
+  const fi = getFechaIngreso(colaborador);
+  if(!fi) return false;
+  const mesIngreso = derivarAnioMes(fi).mes;
+  if(mesIngreso == null) return false;
+  return (mesIngreso >= 1 && mesIngreso <= 8) ? (mes === 9) : (mes === 1);
 }
 
 const PRODUCTS = [
@@ -482,11 +628,17 @@ const PRODUCTS = [
   { id:"salud_esencial",      nombre:"Salud Esencial",                           regimen:"salud",   usaExceso:false, recBasica:0.045 },
   { id:"seguro_oncologico",   nombre:"Seguro Oncológico",                        regimen:"salud",   usaExceso:false, recBasica:0.045, topePPPoliza:6.5 },
   { id:"ap_salud",            nombre:"AP Salud",                                 regimen:"salud",   usaExceso:false, recBasica:0.115 },
-  { id:"mi_proyecto",         nombre:"Mi Proyecto / APV Seguro",                 regimen:"contrato",usaExceso:true,  recBasica:0.19,  recExceso:0.03, topeRecaudacion:3 },
-  { id:"dominium",            nombre:"Dominium / APV Max / Max Universitario",   regimen:"contrato",usaExceso:true,  recBasica:0.25,  recExceso:0.04, topeRecaudacion:3 },
-  { id:"temporales",          nombre:"Temporales",                               regimen:"contrato",usaExceso:false, recBasica:0.32 },
-  { id:"vive_ok",             nombre:"Vive OK",                                  regimen:"contrato",usaExceso:false, recBasica:0.07 },
-  { id:"ap_contrato",         nombre:"AP",                                       regimen:"contrato",usaExceso:false, recBasica:0.16 }
+  // Régimen Contrato: recBasica/recExceso = Tabla 6.1 (2ª-12ª prima); recBasica2/recExceso2 = Tabla 6.2
+  // (13ª-48ª prima) - verificado con imagen/texto de CONTRATO.pdf p.7. sinPeriodoMantencion:true =
+  // no aplica Tabla 6.x en absoluto (solo cobra Suscripción una vez, ej. Renta Vitalicia Privada).
+  // sucBasica/sucExceso/topeSucExceso = Tabla 1 (Comisión por Suscripción, una vez, en el mes de emisión).
+  { id:"mi_proyecto",         nombre:"Mi Proyecto Seguro / Mi APV Seguro",       regimen:"contrato",usaExceso:true,  sucBasica:0.32, sucExceso:0.0375, topeSucExceso:3, recBasica:0.19,  recExceso:0.03, topeExceso:3, recBasica2:0.06, recExceso2:0.006, elegibleCapital:true, elegibleProductividad:true },
+  { id:"dominium",            nombre:"Dominium Max / APV Max / Max Universitario",regimen:"contrato",usaExceso:true, sucBasica:0.42, sucExceso:0.05,  topeSucExceso:3, recBasica:0.25,  recExceso:0.04, topeExceso:3, recBasica2:0.08, recExceso2:0.008, elegibleCapital:true, elegibleProductividad:true },
+  { id:"temporales",          nombre:"Temporal / Temporal Plus",                 regimen:"contrato",usaExceso:false, sucBasica:0.52, recBasica:0.32, recBasica2:0.12, elegibleCapital:true, elegibleProductividad:true },
+  { id:"vive_ok",             nombre:"Vive OK",                                  regimen:"contrato",usaExceso:false, sucBasica:0.10, recBasica:0.07, recBasica2:0.07 },
+  { id:"ap_contrato",         nombre:"AP (Accidentes Personales)",               regimen:"contrato",usaExceso:false, sucBasica:0.20, recBasica:0.16, recBasica2:0.16 },
+  { id:"apeg_contrato",       nombre:"APEG (AP con emisión garantizada)",        regimen:"contrato",usaExceso:false, sucBasica:0.26, recBasica:0.20, recBasica2:0.20 },
+  { id:"renta_privada",       nombre:"Renta Vitalicia Privada",                  regimen:"contrato",usaExceso:false, sucBasica:0.023, topeSucUnico:100, soloSuscripcion:true }
 ];
 const productById = id => PRODUCTS.find(p => p.id === id);
 const productByNombre = n => PRODUCTS.find(p => p.nombre === n);
@@ -520,7 +672,12 @@ function construirTransaccion(datos){
     anio, mes,
     primaBasicaAnual: Number(datos.primaBasicaAnual) || 0,
     primaExcesoAnual: Number(datos.primaExcesoAnual) || 0,
-    k: Number(datos.k) || 0
+    k: Number(datos.k) || 0,
+    // Estado real de la póliza - determina si sigue generando recaudación/mantención y cómo se
+    // clasifica en el indicador de Persistencia/Permanencia (ver polizaActivaEnPeriodo más abajo).
+    estado: datos.estado || "vigente", // "vigente" | "no_vigente" | "siniestrada"
+    fechaTermino: datos.fechaTermino || "", // solo relevante si estado != "vigente"
+    endosoNeto: Number(datos.endosoNeto) || 0 // UFA de endoso acumulado de la póliza (ver indicadorPersistencia)
   };
 }
 
@@ -557,8 +714,7 @@ const hoy = new Date();
 let filtros = {
   anio: hoy.getFullYear(),
   mes: hoy.getMonth() + 1,
-  colaborador: "TODOS",
-  persistencia: 95
+  colaborador: "TODOS"
 };
 
 /* ==================== VALOR UF DE CIERRE, GUARDADO POR AÑO/MES ==================== */
@@ -584,9 +740,111 @@ function setValorUF(anio, mes, valor){
 // de los períodos quedan sin dato a propósito, para demostrar que la app los pide al usarlos.
 setValorUF(2026, 8, 40873.77);
 
+/* ==================== ANTIGÜEDAD DEL COLABORADOR (Fecha de ingreso a la Compañía) ====================
+   Necesaria para elegir el tramo correcto de la Tabla 3 de Persistencia (Agentes/Salud, ≤3/4-6/7-12/
+   ≥13 meses) y, más adelante, el tramo de antigüedad de la Tabla 7 de Contrato. Es una fecha por
+   colaborador (no cambia mes a mes, a diferencia del Valor UF). */
+let fechaIngresoPorColaborador = {};
+function getFechaIngreso(colaborador){ return fechaIngresoPorColaborador[colaborador] || null; }
+function setFechaIngreso(colaborador, fechaISO){
+  if(!fechaISO){ delete fechaIngresoPorColaborador[colaborador]; return; }
+  fechaIngresoPorColaborador[colaborador] = fechaISO;
+}
+function mesesAntiguedadColaborador(colaborador, anioRef, mesRef){
+  const fi = getFechaIngreso(colaborador);
+  if(!fi) return null;
+  const d = derivarAnioMes(fi);
+  if(d.anio == null) return null;
+  return mesesEntre(d.anio, d.mes, anioRef, mesRef);
+}
+// Ejemplo real ya conocido por el usuario: fechas de ingreso de las 3 colaboradoras de ejemplo.
+setFechaIngreso("Virginia", "2023-01-15");
+setFechaIngreso("Carolina", "2024-06-01");
+setFechaIngreso("Gisela", "2026-01-05");
+
+/* ==================== INDICADOR DE PERSISTENCIA / PERMANENCIA ====================
+   Fórmula IDÉNTICA en Agentes.pdf, Salud.pdf y CONTRATO.pdf (verificada, texto extraído de los tres):
+     (UFAS Vigentes ± UFAS Endoso) / (UFAS Vigentes + UFAS Endoso[positivo] + UFAS No Vigentes - UFAS Siniestros)
+   Se calcula sobre TODA la cartera histórica del colaborador en ese régimen (no solo lo emitido en el
+   mes filtrado), dentro de una ventana de antigüedad de póliza: ≤24 meses para Agentes y Salud (ambos
+   PDF lo dicen explícitamente para las 3 categorías); para Contrato ("Permanencia"), Vigentes NO tiene
+   tope de antigüedad, pero No Vigentes/Siniestros sí, a ≤36 meses (CONTRATO.pdf p.9 - ahí se llama
+   "Permanencia" y alimenta las Tablas 7/8, no esta Persistencia de Agentes/Salud).
+   Simplificación documentada: el Endoso neto se ingresa como UN monto acumulado por póliza (no como
+   una bitácora de endosos con fecha), así que se cuenta completo en cualquier mes en que la póliza
+   esté dentro de la ventana de antigüedad - no se prorratea según cuándo ocurrió el endoso realmente. */
+function indicadorPersistencia(colaborador, regimenesIncluidos, anioRef, mesRef, topeAntiguedadVigentes, topeAntiguedadNoVigentes){
+  const txs = transactions.filter(t => {
+    const p = productById(t.productoId);
+    return t.colaborador === colaborador && p && regimenesIncluidos.includes(p.regimen);
+  });
+  let vigentes = 0, endosoNeto = 0, endosoPositivo = 0, noVigentes = 0, siniestros = 0;
+  txs.forEach(t => {
+    const cuota = numeroCuotaEnPeriodo(t, anioRef, mesRef); // null si aún no se emitía en este período
+    if(cuota == null) return;
+    const antiguedadMeses = cuota - 1;
+    const ufas = (Number(t.primaBasicaAnual)||0) + (Number(t.primaExcesoAnual)||0);
+    const endoso = Number(t.endosoNeto) || 0;
+    if(t.estado === "vigente"){
+      if(topeAntiguedadVigentes == null || antiguedadMeses <= topeAntiguedadVigentes){
+        vigentes += ufas;
+        endosoNeto += endoso;
+        if(endoso > 0) endosoPositivo += endoso;
+      }
+    } else if(antiguedadMeses <= topeAntiguedadNoVigentes){
+      if(t.estado === "siniestrada") siniestros += ufas;
+      else noVigentes += ufas;
+    }
+  });
+  const numerador = vigentes + endosoNeto;
+  const denominador = vigentes + endosoPositivo + noVigentes - siniestros;
+  if(denominador <= 0) return null; // sin cartera suficiente (aún) para calcular el indicador
+  return Math.max(0, Math.min(100, (numerador / denominador) * 100));
+}
+// Persistencia (Agentes o Salud) automática de un colaborador para un período: indicador (≤24 meses)
+// + tramo de antigüedad del colaborador (Tabla 3). Devuelve {pct, tramo} o null si falta algún dato
+// (sin Fecha de Ingreso cargada, o sin cartera suficiente para el indicador).
+function persistenciaAutomatica(colaborador, regimen, anioRef, mesRef){
+  const meses = mesesAntiguedadColaborador(colaborador, anioRef, mesRef);
+  const tramo = tramoAntiguedadPersistencia(meses);
+  const pct = indicadorPersistencia(colaborador, [regimen], anioRef, mesRef, 24, 24);
+  if(tramo == null || pct == null) return { pct, tramo, factor: null };
+  return { pct, tramo, factor: factorPersistencia(pct, tramo) };
+}
+
 /* ==================== MOTOR DE CÁLCULO ==================== */
 function primaBasicaMensual(t){ return (Number(t.primaBasicaAnual)||0) / 12; }
 function primaExcesoMensual(t){ return (Number(t.primaExcesoAnual)||0) / 12; }
+
+// Meses transcurridos entre (anio1,mes1) y (anio2,mes2). Puede ser negativo.
+function mesesEntre(anio1, mes1, anio2, mes2){
+  return (Number(anio2)*12 + Number(mes2)) - (Number(anio1)*12 + Number(mes1));
+}
+
+// "Número de cuota" (prima recaudada) de una póliza en un período dado, contando 1 en el mes de su
+// propia Fecha de Emisión. null si la póliza no tiene Fecha Emisión o el período es anterior a ella.
+function numeroCuotaEnPeriodo(t, anioRef, mesRef){
+  if(t.anio == null || t.mes == null) return null; // t.anio/t.mes ya se derivan de Fecha Emisión
+  const meses = mesesEntre(t.anio, t.mes, anioRef, mesRef);
+  if(meses < 0) return null;
+  return meses + 1;
+}
+
+// ¿La póliza se considera activa (para recaudación/mantención e indicador de Persistencia) en un
+// período dado? Simplificación documentada: "Estado" es el estado ACTUAL de la póliza (no un
+// historial mes a mes). Si está Vigente, se asume vigente en todos los períodos desde su emisión
+// hasta hoy. Si no vigente/siniestrada, se usa "Fecha Término" (si se ingresó) para saber desde
+// qué mes dejó de contarse; sin Fecha Término, se asume que dejó de aportar desde siempre (evita
+// sobreestimar comisiones de una póliza que ya no está vigente).
+function polizaActivaEnPeriodo(t, anioRef, mesRef){
+  if(t.estado === "no_vigente" || t.estado === "siniestrada"){
+    if(!t.fechaTermino) return false;
+    const ft = derivarAnioMes(t.fechaTermino);
+    if(ft.anio == null) return false;
+    return mesesEntre(ft.anio, ft.mes, anioRef, mesRef) < 0;
+  }
+  return true; // "vigente" (default)
+}
 
 function ppPoliza(t){
   try {
@@ -600,96 +858,218 @@ function ppPoliza(t){
       if(p.topePPPoliza != null) pp = Math.min(pp, p.topePPPoliza);
       return pp;
     }
-    return 0; // Régimen Contrato no aporta a la Prima de Productividad
+    return 0; // Régimen Contrato no aporta a la Prima de Productividad (Bono de Venta)
   } catch(e){ console.error("Error calculando PP de póliza", t, e); return 0; }
 }
 
-function recaudacionPoliza(t){
+// Recaudación/Mantención RECURRENTE de una póliza para un período (anioRef,mesRef) específico, que
+// puede ser distinto al mes de su propia Fecha de Emisión: este bono se paga TODOS los meses
+// mientras la póliza esté vigente, no solo el mes de venta (verificado: Agentes.pdf/Salud.pdf,
+// "Pago mensual por 24 meses"; CONTRATO.pdf Tablas 6.1 [2ª-12ª prima] y 6.2 [13ª-48ª prima]).
+function recaudacionPolizaEnPeriodo(t, anioRef, mesRef){
   try {
     const p = productById(t.productoId);
-    if(!p) return 0;
+    if(!p || p.soloSuscripcion) return 0; // ej. Renta Vitalicia Privada: solo cobra Suscripción, nunca mantención
+    if(!polizaActivaEnPeriodo(t, anioRef, mesRef)) return 0;
+    const cuota = numeroCuotaEnPeriodo(t, anioRef, mesRef);
+    if(cuota == null) return 0;
     const b = primaBasicaMensual(t);
     const e = primaExcesoMensual(t);
     if(p.id === "seguro_vida"){
+      if(cuota > 24) return 0;
       return b * p.recBasica;
     }
     if(p.regimen === "agentes"){
+      if(cuota > 24) return 0;
       const rb = b * p.recBasica;
       const re = Math.min(e * p.recExceso, p.topeExceso ?? Infinity);
       return rb + re;
     }
     if(p.regimen === "salud"){
+      if(cuota > 24) return 0;
       return b * p.recBasica;
     }
     if(p.regimen === "contrato"){
-      if(p.usaExceso){
-        const raw = (b * p.recBasica) + (e * p.recExceso);
-        return Math.min(raw, p.topeRecaudacion ?? Infinity);
-      }
-      return b * p.recBasica;
+      // La cuota 1 corresponde a la Comisión por Suscripción (Tabla 1, pago único) - no a mantención.
+      let recBasica, recExceso;
+      if(cuota >= 2 && cuota <= 12){ recBasica = p.recBasica; recExceso = p.recExceso; }
+      else if(cuota >= 13 && cuota <= 48){ recBasica = p.recBasica2; recExceso = p.recExceso2; }
+      else return 0; // cuota 1, o > 48 (sin bono de mantención - CONTRATO.pdf p.7 nota)
+      if(recBasica == null) return 0;
+      const rb = b * recBasica;
+      const re = p.usaExceso ? Math.min(e * (recExceso||0), p.topeExceso ?? Infinity) : 0;
+      return rb + re;
     }
     return 0;
-  } catch(e){ console.error("Error calculando recaudación de póliza", t, e); return 0; }
+  } catch(e){ console.error("Error calculando recaudación recurrente de póliza", t, anioRef, mesRef, e); return 0; }
+}
+
+// Comisión por Suscripción y Formalización (Tabla 1, Régimen Contrato) - pago único, exclusivo del
+// mes de Fecha de Emisión (cuota 1). Verificado contra CONTRATO.pdf Cláusula I.1 / Tabla 1.
+function comisionSuscripcionPoliza(t){
+  try {
+    const p = productById(t.productoId);
+    if(!p || p.regimen !== "contrato" || p.sucBasica == null) return 0;
+    const b = primaBasicaMensual(t);
+    let comision = b * p.sucBasica;
+    if(p.usaExceso && p.sucExceso != null){
+      const e = primaExcesoMensual(t);
+      comision += Math.min(e * p.sucExceso, p.topeSucExceso ?? Infinity);
+    }
+    if(p.topeSucUnico != null) comision = Math.min(comision, p.topeSucUnico);
+    return comision;
+  } catch(e){ console.error("Error calculando comisión de suscripción", t, e); return 0; }
 }
 
 function tasaBono(pp){
   for(const tramo of TRAMOS_BONO){ if(pp <= tramo.hasta) return tramo.tasa; }
   return TRAMOS_BONO[TRAMOS_BONO.length-1].tasa;
 }
-function factorPersistencia(pct){
-  for(const tramo of TRAMOS_PERSISTENCIA){ if(pct >= tramo.desde) return tramo.factor; }
-  return 0;
-}
+// (factorPersistencia(pct, tramoAntiguedad) vive más arriba, junto a TRAMOS_PERSISTENCIA_POR_ANTIGUEDAD)
 
 // Calcula el detalle de un colaborador en un año/mes específico (de Fecha de Emisión).
-// IMPORTANTE: el tramo del Bono de Venta y su tope de 65 UF se evalúan POR COLABORADOR,
-// nunca sobre una PP ya sumada entre varios colaboradores (evita sobreestimar el bono consolidado).
-function calcularColaboradorMes(colaborador, anio, mes, persistenciaPct){
-  const txs = transactions.filter(t => t.colaborador === colaborador && Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes));
-  let pp = 0, recAgentesSalud = 0, recContrato = 0, kTotalContrato = 0;
-  txs.forEach(t => {
+// IMPORTANTE: Agentes.pdf y Salud.pdf son dos anexos de contrato SEPARADOS, cada uno con su propia
+// Cláusula de remuneración variable - el Bono de Venta, su tope de 65 UF y el Premio por Persistencia
+// se calculan de forma INDEPENDIENTE para el régimen Agentes y para el régimen Salud. La Recaudación/
+// Mantención (los 3 regímenes) y la Comisión de Suscripción/Emisión mensual (Contrato) son RECURRENTES:
+// se calculan revisando TODA la cartera histórica del colaborador, no solo lo emitido este mes (ver
+// recaudacionPolizaEnPeriodo). PP, Comisión de Suscripción y Comisión de Capital sí son exclusivas del
+// mes de emisión (negocio nuevo del mes).
+function calcularColaboradorMes(colaborador, anio, mes){
+  const txsMes = transactions.filter(t => t.colaborador === colaborador && Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes));
+  const txsTodas = transactions.filter(t => t.colaborador === colaborador);
+
+  let ppAgentes = 0, ppSalud = 0, kTotalContrato = 0;
+  let comisionSuscripcion = 0, ufaTotalContrato = 0;
+  let elegiblesCapitalCount = 0;
+  const conteoProductividad = { total: 0, tieneDominium: false };
+  txsMes.forEach(t => {
     const p = productById(t.productoId);
     if(!p) return;
     if(p.regimen === "contrato"){
-      recContrato += recaudacionPoliza(t);
-      // Comisión por Capital (Tabla 3.2) es exclusiva de Régimen Contrato (así lo dice el
-      // CONTRATO.pdf - lista de productos de la cláusula SEGUNDO coincide con este régimen).
-      kTotalContrato += Number(t.k) || 0;
+      if(p.elegibleCapital){ kTotalContrato += Number(t.k) || 0; elegiblesCapitalCount++; }
+      if(!p.soloSuscripcion){
+        comisionSuscripcion += comisionSuscripcionPoliza(t);
+        ufaTotalContrato += (Number(t.primaBasicaAnual)||0) + (Number(t.primaExcesoAnual)||0);
+      } else {
+        comisionSuscripcion += comisionSuscripcionPoliza(t); // Renta Privada: solo esta comisión, no aporta a UFA/emisión mensual
+      }
+      if(p.elegibleProductividad){
+        conteoProductividad.total++;
+        if(p.id === "dominium") conteoProductividad.tieneDominium = true;
+      }
     } else {
-      pp += ppPoliza(t);
-      recAgentesSalud += recaudacionPoliza(t);
+      if(p.regimen === "agentes") ppAgentes += ppPoliza(t);
+      else if(p.regimen === "salud") ppSalud += ppPoliza(t);
     }
   });
-  let bonoVenta = pp * tasaBono(pp);
-  bonoVenta = Math.min(bonoVenta, TOPE_BONO_VENTA_UF);
-  const premioPersistencia = bonoVenta * factorPersistencia(Number(persistenciaPct) || 0);
+
+  // Recaudación/Mantención recurrente: se revisa TODA la cartera histórica del colaborador (no solo
+  // txsMes), evaluando para cada póliza si en ESTE período (anio,mes) sigue vigente y dentro de su
+  // ventana de antigüedad (ver recaudacionPolizaEnPeriodo). De paso se suma la cartera Contrato
+  // actualmente vigente (UFA), que alimenta el Premio Anual por Permanencia (Tabla 8).
+  let recAgentesSalud = 0, recContrato = 0, carteraVigenteUFAContrato = 0;
+  txsTodas.forEach(t => {
+    const p = productById(t.productoId);
+    if(!p) return;
+    const rec = recaudacionPolizaEnPeriodo(t, anio, mes);
+    if(p.regimen === "contrato"){
+      recContrato += rec;
+      if(polizaActivaEnPeriodo(t, anio, mes) && numeroCuotaEnPeriodo(t, anio, mes) != null) carteraVigenteUFAContrato += (Number(t.primaBasicaAnual)||0) + (Number(t.primaExcesoAnual)||0);
+    } else recAgentesSalud += rec;
+  });
+
+  const bonoVentaAgentes = Math.min(ppAgentes * tasaBono(ppAgentes), TOPE_BONO_VENTA_UF);
+  const bonoVentaSalud = Math.min(ppSalud * tasaBono(ppSalud), TOPE_BONO_VENTA_UF);
+  // Persistencia se calcula AUTOMÁTICAMENTE desde el estado de las pólizas y la antigüedad del
+  // colaborador (ver bloque "INDICADOR DE PERSISTENCIA / PERMANENCIA" más arriba) - ya no es un % manual.
+  const infoPersistenciaAgentes = persistenciaAutomatica(colaborador, "agentes", anio, mes);
+  const infoPersistenciaSalud = persistenciaAutomatica(colaborador, "salud", anio, mes);
+  const premioPersistenciaAgentes = bonoVentaAgentes * (infoPersistenciaAgentes.factor || 0);
+  const premioPersistenciaSalud = bonoVentaSalud * (infoPersistenciaSalud.factor || 0);
+  const pp = ppAgentes + ppSalud;
+  const bonoVenta = bonoVentaAgentes + bonoVentaSalud;
+  const premioPersistencia = premioPersistenciaAgentes + premioPersistenciaSalud;
   const recaudacion = recAgentesSalud + recContrato;
-  // Tabla 3.2 se aplica UNA VEZ por mes sobre la SUMA de k del mes (capital equivalente total),
-  // no póliza por póliza - de lo contrario se subestimarían los tramos altos.
-  const comisionCapital = comisionCapitalDesdeK(kTotalContrato);
-  const total = bonoVenta + premioPersistencia + recaudacion + comisionCapital;
-  return { colaborador, pp, bonoVenta, premioPersistencia, recAgentesSalud, recContrato, recaudacion, kTotalContrato, comisionCapital, total, nTransacciones: txs.length };
+
+  // Comisión por Capital: requiere ≥2 seguros elegibles emitidos en el mes, salvo que el colaborador
+  // tenga ≥8 años (96 meses) de antigüedad en la Compañía (CONTRATO.pdf Cláusula I.3).
+  const antiguedadColaboradorMeses = mesesAntiguedadColaborador(colaborador, anio, mes);
+  const exentoMinimoCapital = antiguedadColaboradorMeses != null && antiguedadColaboradorMeses >= 96;
+  const cumpleMinimoCapital = elegiblesCapitalCount >= 2 || exentoMinimoCapital;
+  // Premio por Productividad: +5% a la Comisión por Capital si ≥4 pólizas elegibles en el mes,
+  // incluyendo al menos 1 Dominium Max/APV Max/Max Universitario (CONTRATO.pdf Cláusula I.5).
+  // Simplificación: "Temporales a más de 5 años" no se distingue del resto de Temporales (la app no
+  // registra duración de póliza) - se cuentan todas las Temporales para este conteo.
+  const aplicaProductividad = conteoProductividad.total >= 4 && conteoProductividad.tieneDominium;
+  const comisionCapital = cumpleMinimoCapital ? comisionCapitalDesdeK(kTotalContrato, aplicaProductividad ? 1.05 : 1) : 0;
+
+  // Premio por emisión o formalización mensual (Tabla 2, Contrato): bonificación marginal sobre la
+  // UFA total Contrato del mes, aplicada como % adicional sobre el total de Comisión de Suscripción.
+  const premioEmisionMensual = comisionSuscripcion * factorEmisionMensualContrato(ufaTotalContrato);
+
+  // Permanencia (Contrato, distinta de la Persistencia de Agentes/Salud): Vigentes sin tope de
+  // antigüedad, No Vigentes/Siniestros con tope ≤36 meses (CONTRATO.pdf p.9). Alimenta la Tabla 7
+  // (Bono tamaño cartera, mensual) y la Tabla 8 (Premio anual, solo en su mes de evaluación).
+  const permanenciaContrato = indicadorPersistencia(colaborador, ["contrato"], anio, mes, null, 36);
+  const infoTamanoCartera = bonoTamanoCartera(antiguedadColaboradorMeses, recContrato, permanenciaContrato);
+  const bonoTamanoCarteraCLP = infoTamanoCartera.bono;
+  const esMesTabla8 = esMesEvaluacionTabla8(colaborador, anio, mes);
+  const premioPermanenciaAnual = esMesTabla8 ? premioPermanenciaAnualUF(carteraVigenteUFAContrato, permanenciaContrato, antiguedadColaboradorMeses) : 0;
+
+  // El total en UF NO incluye el Bono por Tamaño de Cartera (Tabla 7): esa fórmula entrega un monto
+  // en PESOS directamente (verificado con el ejemplo del propio contrato), no convertible a UF sin
+  // inventar un tipo de cambio - se guarda y muestra aparte (ver bonoTamanoCarteraCLP).
+  const total = bonoVenta + premioPersistencia + recaudacion + comisionCapital + comisionSuscripcion + premioEmisionMensual + premioPermanenciaAnual;
+  return {
+    colaborador,
+    ppAgentes, ppSalud, pp,
+    bonoVentaAgentes, bonoVentaSalud, bonoVenta,
+    persistenciaPctAgentes: infoPersistenciaAgentes.pct, tramoAntiguedadAgentes: infoPersistenciaAgentes.tramo,
+    persistenciaPctSalud: infoPersistenciaSalud.pct, tramoAntiguedadSalud: infoPersistenciaSalud.tramo,
+    premioPersistenciaAgentes, premioPersistenciaSalud, premioPersistencia,
+    recAgentesSalud, recContrato, recaudacion,
+    kTotalContrato, comisionCapital, cumpleMinimoCapital, aplicaProductividad,
+    comisionSuscripcion, ufaTotalContrato, premioEmisionMensual,
+    antiguedadColaboradorMeses,
+    permanenciaContrato, carteraVigenteUFAContrato,
+    bonoTamanoCarteraCLP, motivoTamanoCartera: infoTamanoCartera.motivo, tramoTamanoCartera: infoTamanoCartera.tramo,
+    esMesTabla8, premioPermanenciaAnual,
+    total, nTransacciones: txsMes.length
+  };
 }
 
+// Un colaborador "tiene datos" en un período si emitió negocio nuevo ESE mes, o si alguna póliza
+// suya de otro mes sigue generando Recaudación/Mantención recurrente en este período - de lo
+// contrario un colaborador sin ventas nuevas pero con cartera vigente desaparecería del
+// consolidado/ranking pese a seguir generando comisión ese mes.
 function colaboradoresConDatos(anio, mes){
   const set = new Set();
-  transactions.forEach(t => { if(t.anio != null && Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes)) set.add(t.colaborador); });
+  transactions.forEach(t => {
+    if(t.anio != null && Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes)){ set.add(t.colaborador); return; }
+    if(recaudacionPolizaEnPeriodo(t, anio, mes) > 0) set.add(t.colaborador);
+  });
   return Array.from(set).sort((a,b) => a.localeCompare(b, 'es'));
 }
 
-function calcularVista(anio, mes, colaboradorFiltro, persistenciaPct){
+function calcularVista(anio, mes, colaboradorFiltro){
   if(colaboradorFiltro === "TODOS"){
     const colaboradores = colaboradoresConDatos(anio, mes);
-    const detalles = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct));
+    const detalles = colaboradores.map(c => calcularColaboradorMes(c, anio, mes));
     const agg = detalles.reduce((acc, d) => {
-      acc.pp += d.pp; acc.bonoVenta += d.bonoVenta; acc.premioPersistencia += d.premioPersistencia;
+      acc.ppAgentes += d.ppAgentes; acc.ppSalud += d.ppSalud; acc.pp += d.pp;
+      acc.bonoVentaAgentes += d.bonoVentaAgentes; acc.bonoVentaSalud += d.bonoVentaSalud; acc.bonoVenta += d.bonoVenta;
+      acc.premioPersistenciaAgentes += d.premioPersistenciaAgentes; acc.premioPersistenciaSalud += d.premioPersistenciaSalud; acc.premioPersistencia += d.premioPersistencia;
       acc.recAgentesSalud += d.recAgentesSalud; acc.recContrato += d.recContrato; acc.recaudacion += d.recaudacion;
-      acc.kTotalContrato += d.kTotalContrato; acc.comisionCapital += d.comisionCapital; acc.total += d.total;
+      acc.kTotalContrato += d.kTotalContrato; acc.comisionCapital += d.comisionCapital;
+      acc.comisionSuscripcion += d.comisionSuscripcion; acc.ufaTotalContrato += d.ufaTotalContrato; acc.premioEmisionMensual += d.premioEmisionMensual;
+      acc.bonoTamanoCarteraCLP += d.bonoTamanoCarteraCLP; acc.premioPermanenciaAnual += d.premioPermanenciaAnual;
+      acc.total += d.total; acc.nTransacciones += d.nTransacciones;
       return acc;
-    }, { pp:0, bonoVenta:0, premioPersistencia:0, recAgentesSalud:0, recContrato:0, recaudacion:0, kTotalContrato:0, comisionCapital:0, total:0 });
+    }, { ppAgentes:0, ppSalud:0, pp:0, bonoVentaAgentes:0, bonoVentaSalud:0, bonoVenta:0, premioPersistenciaAgentes:0, premioPersistenciaSalud:0, premioPersistencia:0, recAgentesSalud:0, recContrato:0, recaudacion:0, kTotalContrato:0, comisionCapital:0, comisionSuscripcion:0, ufaTotalContrato:0, premioEmisionMensual:0, bonoTamanoCarteraCLP:0, premioPermanenciaAnual:0, total:0, nTransacciones:0 });
     return { modo:"TODOS", agg, detalles };
   }
-  const d = calcularColaboradorMes(colaboradorFiltro, anio, mes, persistenciaPct);
+  const d = calcularColaboradorMes(colaboradorFiltro, anio, mes);
   return { modo:"INDIVIDUAL", agg:d, detalles:[d] };
 }
 
@@ -801,6 +1181,18 @@ function actualizarVisibilidadExceso(){
   }
 }
 
+// Fecha Término solo tiene sentido si la póliza ya no está Vigente (ver polizaActivaEnPeriodo).
+function actualizarVisibilidadFechaTermino(){
+  const estado = document.getElementById('fEstado').value;
+  const wrap = document.getElementById('wrapFechaTermino');
+  if(estado === "vigente"){
+    wrap.classList.add('hidden');
+    document.getElementById('fFechaTermino').value = "";
+  } else {
+    wrap.classList.remove('hidden');
+  }
+}
+
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -812,10 +1204,10 @@ function renderAll(){
   poblarDatalistColaboradores();
   poblarDatalistClientes();
 
-  const vista = calcularVista(filtros.anio, filtros.mes, filtros.colaborador, filtros.persistencia);
+  const vista = calcularVista(filtros.anio, filtros.mes, filtros.colaborador);
   renderKPIs(vista);
   renderDesglose(vista);
-  renderRanking(filtros.anio, filtros.mes, filtros.persistencia);
+  renderRanking(filtros.anio, filtros.mes);
   renderHistorial();
 }
 
@@ -824,14 +1216,17 @@ function renderKPIs(vista){
   const valorUF = getValorUF(filtros.anio, filtros.mes);
   const kpiTotalCLP = document.getElementById('kpiTotalCLP');
   const btnFaltaUF = document.getElementById('btnFaltaUFKpi');
+  const bonoCarteraCLP = a.bonoTamanoCarteraCLP || 0;
+  // El Bono por Tamaño de Cartera (Tabla 7, Contrato) es un monto en PESOS directo (no en UF - ver
+  // bonoTamanoCartera), así que se suma al total en pesos incluso cuando falta el Valor UF del mes.
   if(valorUF == null){
-    kpiTotalCLP.textContent = "—";
+    kpiTotalCLP.textContent = bonoCarteraCLP > 0 ? `≥ ${fmtCLP(bonoCarteraCLP)}` : "—";
     btnFaltaUF.classList.remove('hidden');
   } else {
-    kpiTotalCLP.textContent = fmtCLP(a.total * valorUF);
+    kpiTotalCLP.textContent = fmtCLP(a.total * valorUF + bonoCarteraCLP);
     btnFaltaUF.classList.add('hidden');
   }
-  document.getElementById('kpiTotalUF').textContent = fmtUF(a.total) + " UF";
+  document.getElementById('kpiTotalUF').textContent = fmtUF(a.total) + " UF" + (bonoCarteraCLP > 0 ? ` + ${fmtCLP(bonoCarteraCLP)} (Bono Tamaño Cartera, en pesos)` : "");
   document.getElementById('kpiPP').textContent = fmtUF(a.pp) + " UF";
   document.getElementById('kpiBonoPersistencia').textContent = fmtUF(a.bonoVenta + a.premioPersistencia) + " UF";
   document.getElementById('kpiRecaudacion').textContent = fmtUF(a.recaudacion) + " UF";
@@ -845,48 +1240,101 @@ function renderDesglose(vista){
     : `${escapeHtml(filtros.colaborador)} &middot; ${MESES[filtros.mes-1]} ${filtros.anio}`;
   document.getElementById('desgloseContexto').innerHTML = ctx;
 
-  const tasa = tasaBono(a.pp);
-  const factorPers = factorPersistencia(Number(filtros.persistencia)||0);
+  // Agentes y Salud son dos anexos de contrato separados (verificado contra Agentes.pdf y Salud.pdf):
+  // cada uno con su propia PP, su propio Bono de Venta (tope 65 UF) y su propio Premio por Persistencia.
+  // Por eso el desglose los muestra como bloques independientes, nunca combinados en una sola fila.
+  function filasRegimen(nombreRegimen, ppRegimen, bonoRegimen, pctRegimen, tramoRegimen, premioRegimen, sinDatoCount){
+    const tasaReg = tasaBono(ppRegimen);
+    const filaBono = { concepto:`Bono de Venta — ${nombreRegimen}`, base:`PP ${nombreRegimen} = ${fmtUF(ppRegimen)} UF`, tasa: fmtPct(tasaReg) + (bonoRegimen >= TOPE_BONO_VENTA_UF && ppRegimen*tasaReg > TOPE_BONO_VENTA_UF ? " (topado 65 UF)" : ""), uf:bonoRegimen };
+    let filaPersistencia;
+    if(vista.modo === "INDIVIDUAL"){
+      if(pctRegimen == null){
+        const motivo = tramoRegimen == null ? "sin fecha de ingreso del colaborador" : "sin cartera suficiente aún";
+        filaPersistencia = { concepto:`Premio por Persistencia — ${nombreRegimen}`, base:`Bono Venta ${nombreRegimen} = ${fmtUF(bonoRegimen)} UF`, tasa: `<span class="text-amber-600 font-medium">Persistencia automática: ${motivo} (0%)</span>`, uf:premioRegimen };
+      } else {
+        filaPersistencia = { concepto:`Premio por Persistencia — ${nombreRegimen}`, base:`Bono Venta ${nombreRegimen} = ${fmtUF(bonoRegimen)} UF · Persistencia automática ${fmtUF(pctRegimen)}%`, tasa: fmtPct(factorPersistencia(pctRegimen, tramoRegimen)), uf:premioRegimen };
+      }
+    } else {
+      filaPersistencia = { concepto:`Premio por Persistencia — ${nombreRegimen}`, base:`Bono Venta ${nombreRegimen} consolidado = ${fmtUF(bonoRegimen)} UF`, tasa: "Tabla 3, calculado automáticamente por colaborador (antigüedad en la Compañía + estado real de sus pólizas) — ver Reporte comparativo" + (sinDatoCount ? ` <span class="text-amber-600 font-medium">· ${sinDatoCount} sin persistencia ${nombreRegimen} calculable</span>` : ""), uf:premioRegimen };
+    }
+    return [filaBono, filaPersistencia];
+  }
+  const sinDatoAgentes = vista.detalles.filter(d => d.bonoVentaAgentes > 0 && d.persistenciaPctAgentes == null).length;
+  const sinDatoSalud = vista.detalles.filter(d => d.bonoVentaSalud > 0 && d.persistenciaPctSalud == null).length;
+  const capitalTasaTexto = "Tabla 3.2 marginal (tope 75 UF/mes por colaborador)"
+    + (vista.detalles.some(d => d.comisionCapital >= TOPE_COMISION_CAPITAL_UF && d.kTotalContrato > 0) ? " — algún colaborador topado" : "")
+    + (vista.modo === "INDIVIDUAL"
+        ? (!vista.detalles[0].cumpleMinimoCapital
+            ? ` <span class="text-amber-600 font-medium">· no cumple mínimo de 2 pólizas elegibles del mes (0 UF)</span>`
+            : (vista.detalles[0].aplicaProductividad ? " · Premio por Productividad +5% aplicado (Cláusula I.5)" : ""))
+        : "");
   const filas = [
-    { concepto:"Prima de Productividad (PP)", base:"Suma primas Agentes + Salud del mes (por Fecha Emisión)", tasa:"—", uf:a.pp },
-    { concepto:"Bono de Venta", base:`PP = ${fmtUF(a.pp)} UF`, tasa: fmtPct(tasa) + (a.bonoVenta >= TOPE_BONO_VENTA_UF && a.pp*tasa > TOPE_BONO_VENTA_UF ? " (topado 65 UF)" : ""), uf:a.bonoVenta },
-    { concepto:"Premio por Persistencia (24 meses)", base:`Bono Venta = ${fmtUF(a.bonoVenta)} UF · Persistencia ${filtros.persistencia}%`, tasa: fmtPct(factorPers), uf:a.premioPersistencia },
-    { concepto:"Recaudación / Mantención — Agentes y Salud", base:"Prima básica/exceso mensual de pólizas Agentes + Salud", tasa:"según producto", uf:a.recAgentesSalud },
-    { concepto:"Recaudación / Mantención — Contrato Tradicional", base:"Prima básica/exceso mensual de pólizas Contrato", tasa:"según producto", uf:a.recContrato },
-    { concepto:"Comisión por Capital — Contrato Tradicional", base:`Suma de k del mes (capital equivalente) = ${fmtUF(a.kTotalContrato)} UF`, tasa: "Tabla 3.2 marginal (tope 75 UF/mes por colaborador)" + (vista.detalles.some(d => d.comisionCapital >= TOPE_COMISION_CAPITAL_UF && d.kTotalContrato > 0) ? " — algún colaborador topado" : ""), uf:a.comisionCapital }
+    { concepto:"Prima de Productividad (PP) — Agentes", base:"Ahorro Familiar/Universitario, Seguro de Vida (por Fecha Emisión)", tasa:"—", uf:a.ppAgentes },
+    ...filasRegimen("Agentes", a.ppAgentes, a.bonoVentaAgentes, vista.modo === "INDIVIDUAL" ? vista.detalles[0].persistenciaPctAgentes : null, vista.modo === "INDIVIDUAL" ? vista.detalles[0].tramoAntiguedadAgentes : null, a.premioPersistenciaAgentes, sinDatoAgentes),
+    { concepto:"Prima de Productividad (PP) — Salud", base:"Catastrófico, Oncológico, AP, etc. (por Fecha Emisión)", tasa:"—", uf:a.ppSalud },
+    ...filasRegimen("Salud", a.ppSalud, a.bonoVentaSalud, vista.modo === "INDIVIDUAL" ? vista.detalles[0].persistenciaPctSalud : null, vista.modo === "INDIVIDUAL" ? vista.detalles[0].tramoAntiguedadSalud : null, a.premioPersistenciaSalud, sinDatoSalud),
+    { concepto:"Recaudación / Mantención — Agentes y Salud", base:"Prima básica/exceso mensual de pólizas Agentes + Salud (recurrente, hasta 24 cuotas)", tasa:"según producto", uf:a.recAgentesSalud },
+    { concepto:"Recaudación / Mantención — Contrato Tradicional", base:"Prima básica/exceso mensual de pólizas Contrato (recurrente, cuotas 2-12 Tabla 6.1, 13-48 Tabla 6.2)", tasa:"según producto", uf:a.recContrato },
+    { concepto:"Comisión de Suscripción — Contrato Tradicional", base:`Prima básica/exceso de pólizas Contrato emitidas este mes (pago único, cuota 1) · UFA total = ${fmtUF(a.ufaTotalContrato)} UFA`, tasa:"Tabla 1 (Cláusula I.1)", uf:a.comisionSuscripcion },
+    { concepto:"Premio por Emisión Mensual — Contrato Tradicional", base:`Sobre la Comisión de Suscripción del mes`, tasa:"Tabla 2 marginal por UFA total (Cláusula I.2)", uf:a.premioEmisionMensual },
+    { concepto:"Comisión por Capital — Contrato Tradicional", base:`Suma de k del mes (capital equivalente) = ${fmtUF(a.kTotalContrato)} UF`, tasa: capitalTasaTexto, uf:a.comisionCapital }
   ];
+
+  // Bono por Tamaño de Cartera (Tabla 7) - fórmula que entrega el monto directamente EN PESOS (no
+  // en UF, ver bonoTamanoCartera), así que esta fila muestra "—" en la columna UF y el peso real en
+  // la columna CLP, sin pasar por celdaCLP (que multiplica por Valor UF).
+  const tamanoCarteraBase = vista.modo === "INDIVIDUAL"
+    ? `FlujoUF (Recaudación Contrato del mes) = ${fmtUF(vista.detalles[0].recContrato)} UF · Permanencia = ${vista.detalles[0].permanenciaContrato == null ? 'sin dato' : fmtUF(vista.detalles[0].permanenciaContrato) + '%'}`
+    : `Suma de los bonos de Tamaño de Cartera de cada colaborador (fórmula no lineal, no se puede promediar) — ver Reporte comparativo`;
+  const tamanoCarteraTasa = vista.modo === "INDIVIDUAL"
+    ? (vista.detalles[0].motivoTamanoCartera ? `<span class="text-amber-600 font-medium">Tabla 7: ${vista.detalles[0].motivoTamanoCartera}</span>` : "Tabla 7 (Cláusula II.2), monto en pesos")
+    : "Tabla 7 (Cláusula II.2), monto en pesos";
+  filas.push({ concepto:"Bono por Tamaño de Cartera — Contrato Tradicional", base:tamanoCarteraBase, tasa:tamanoCarteraTasa, uf:null, clpDirecto:a.bonoTamanoCarteraCLP });
+
+  // Premio Anual por Permanencia (Tabla 8) - solo distinto de 0 en el mes de evaluación del
+  // colaborador (Enero o Septiembre, según su mes de ingreso - ver esMesEvaluacionTabla8).
+  const permanenciaAnualBase = vista.modo === "INDIVIDUAL"
+    ? `Cartera Contrato vigente = ${fmtUF(vista.detalles[0].carteraVigenteUFAContrato)} UFA · Permanencia = ${vista.detalles[0].permanenciaContrato == null ? 'sin dato' : fmtUF(vista.detalles[0].permanenciaContrato) + '%'}` + (vista.detalles[0].esMesTabla8 ? "" : " · no es su mes de evaluación este período")
+    : `Solo colaboradores cuyo mes de evaluación (Enero o Septiembre, según mes de ingreso) coincide con ${MESES[filtros.mes-1]}`;
+  filas.push({ concepto:"Premio Anual por Permanencia — Contrato Tradicional", base:permanenciaAnualBase, tasa:"Tabla 8 (Cláusula II.3), tope 41 UF, 1 vez al año", uf:a.premioPermanenciaAnual });
+
   const tbody = document.getElementById('tablaDesglose');
   tbody.innerHTML = filas.map(f => `
     <tr class="fade-in">
       <td class="py-2 pr-3 font-medium text-slate-700">${f.concepto}</td>
       <td class="py-2 pr-3 text-slate-500 text-xs">${f.base}</td>
       <td class="py-2 pr-3 text-slate-500 text-xs">${f.tasa}</td>
-      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.uf)}</td>
-      <td class="py-2 text-right tabular-nums">${celdaCLP(f.uf, valorUF)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${f.uf == null ? '—' : fmtUF(f.uf)}</td>
+      <td class="py-2 text-right tabular-nums">${f.clpDirecto != null ? fmtCLP(f.clpDirecto) : celdaCLP(f.uf, valorUF)}</td>
     </tr>`).join('') + `
     <tr class="fade-in bg-slate-50 font-bold">
-      <td class="py-2 pr-3" colspan="3">Total a pagar</td>
+      <td class="py-2 pr-3" colspan="3">Total a pagar${a.bonoTamanoCarteraCLP > 0 ? ' (incluye Bono Tamaño Cartera en pesos)' : ''}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(a.total)}</td>
-      <td class="py-2 text-right tabular-nums">${celdaCLP(a.total, valorUF)}</td>
+      <td class="py-2 text-right tabular-nums">${valorUF == null ? (a.bonoTamanoCarteraCLP > 0 ? `≥ ${fmtCLP(a.bonoTamanoCarteraCLP)}` : celdaCLP(a.total, valorUF)) : fmtCLP(a.total * valorUF + a.bonoTamanoCarteraCLP)}</td>
     </tr>`;
 }
 
-function renderRanking(anio, mes, persistenciaPct){
+function renderRanking(anio, mes){
   const valorUF = getValorUF(anio, mes);
   document.getElementById('rankingContexto').textContent = `${MESES[mes-1]} ${anio} · UF cierre: ${valorUF == null ? 'sin dato' : fmtUF(valorUF)}`;
   const colaboradores = colaboradoresConDatos(anio, mes);
-  const filas = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct)).sort((x,y) => y.total - x.total);
+  const filas = colaboradores.map(c => calcularColaboradorMes(c, anio, mes)).sort((x,y) => y.total - x.total);
   const tbody = document.getElementById('tablaRanking');
   if(filas.length === 0){
-    tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400 text-sm">Sin transacciones con Fecha de Emisión en ${MESES[mes-1]} ${anio}.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="py-6 text-center text-slate-400 text-sm">Sin transacciones con Fecha de Emisión en ${MESES[mes-1]} ${anio}.</td></tr>`;
     return;
   }
+  const celdaPersistencia = pct => pct == null
+    ? `<span class="text-amber-600 text-xs font-medium" title="Sin fecha de ingreso o sin cartera suficiente">Sin dato</span>`
+    : `${fmtUF(pct)}%`;
   tbody.innerHTML = filas.map((f, i) => `
     <tr class="fade-in hover:bg-slate-50 ${f.colaborador === filtros.colaborador ? 'bg-indigo-50/60' : ''}">
       <td class="py-2 pr-3 text-slate-400">${i+1}</td>
       <td class="py-2 pr-3 font-medium text-slate-700">${escapeHtml(f.colaborador)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.pp)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.bonoVenta)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${celdaPersistencia(f.persistenciaPctAgentes)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${celdaPersistencia(f.persistenciaPctSalud)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.premioPersistencia)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.recaudacion)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.comisionCapital)}</td>
@@ -1052,16 +1500,55 @@ function initModalValorUF(){
   });
 }
 
+// Muestra (solo lectura) la persistencia calculada automáticamente del colaborador actualmente
+// seleccionado (Año/Mes/Colaborador de los filtros globales), y permite ingresar/editar su Fecha
+// de Ingreso a la Compañía (el único dato manual que realmente hace falta - todo lo demás sale de
+// las pólizas). Si el filtro está en "TODOS" se deshabilita (no hay un colaborador único al que
+// aplicarle una fecha de ingreso) y se remite a la columna informativa de Reporte comparativo.
+function textoInfoPersistencia(info){
+  if(info.tramo == null) return { texto: "Sin fecha de ingreso", clase: "text-amber-600" };
+  if(info.pct == null) return { texto: "Sin cartera suficiente aún", clase: "text-slate-400" };
+  return { texto: `${fmtUF(info.pct)}% · factor ${fmtUF((info.factor||0)*100)}%`, clase: "text-slate-700" };
+}
+function sincronizarInfoPersistencia(){
+  const inputFecha = document.getElementById('filtroFechaIngreso');
+  const avisoTodos = document.getElementById('filtroFechaIngresoTodos');
+  const avisoFecha = document.getElementById('filtroFechaIngresoAviso');
+  const avisoTodosPersistencia = document.getElementById('filtroPersistenciaTodos');
+  const elAgentes = document.getElementById('infoPersistenciaAgentes');
+  const elSalud = document.getElementById('infoPersistenciaSalud');
+  avisoTodos.classList.add('hidden');
+  avisoFecha.classList.add('hidden');
+  avisoTodosPersistencia.classList.add('hidden');
+  if(filtros.colaborador === "TODOS"){
+    inputFecha.value = ""; inputFecha.disabled = true;
+    avisoTodos.classList.remove('hidden');
+    avisoTodosPersistencia.classList.remove('hidden');
+    elAgentes.textContent = "—"; elAgentes.className = "text-sm font-semibold text-slate-400";
+    elSalud.textContent = "—"; elSalud.className = "text-sm font-semibold text-slate-400";
+    return;
+  }
+  inputFecha.disabled = false;
+  const fi = getFechaIngreso(filtros.colaborador);
+  inputFecha.value = fi || "";
+  if(!fi) avisoFecha.classList.remove('hidden');
+  const infoAgentes = persistenciaAutomatica(filtros.colaborador, "agentes", filtros.anio, filtros.mes);
+  const infoSalud = persistenciaAutomatica(filtros.colaborador, "salud", filtros.anio, filtros.mes);
+  const tA = textoInfoPersistencia(infoAgentes), tS = textoInfoPersistencia(infoSalud);
+  elAgentes.textContent = tA.texto; elAgentes.className = `text-sm font-semibold ${tA.clase}`;
+  elSalud.textContent = tS.texto; elSalud.className = `text-sm font-semibold ${tS.clase}`;
+}
+
 function initFiltros(){
   poblarSelectAnio(document.getElementById('filtroAnio'), filtros.anio);
   poblarSelectMes(document.getElementById('filtroMes'), filtros.mes);
   poblarSelectColaboradorFiltro();
   sincronizarInputValorUF();
-  document.getElementById('filtroPersistencia').value = filtros.persistencia;
+  sincronizarInfoPersistencia();
 
-  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); ufDesbloqueado = false; sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
-  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); ufDesbloqueado = false; sincronizarInputValorUF(); revisarValorUFPeriodoActual(); renderAll(); });
-  document.getElementById('filtroColaborador').addEventListener('change', e => { filtros.colaborador = e.target.value; renderAll(); });
+  document.getElementById('filtroAnio').addEventListener('change', e => { filtros.anio = Number(e.target.value); ufDesbloqueado = false; sincronizarInputValorUF(); sincronizarInfoPersistencia(); revisarValorUFPeriodoActual(); renderAll(); });
+  document.getElementById('filtroMes').addEventListener('change', e => { filtros.mes = Number(e.target.value); ufDesbloqueado = false; sincronizarInputValorUF(); sincronizarInfoPersistencia(); revisarValorUFPeriodoActual(); renderAll(); });
+  document.getElementById('filtroColaborador').addEventListener('change', e => { filtros.colaborador = e.target.value; sincronizarInfoPersistencia(); renderAll(); });
   document.getElementById('filtroValorUF').addEventListener('input', e => {
     setValorUF(filtros.anio, filtros.mes, e.target.value);
     renderAll();
@@ -1084,9 +1571,11 @@ function initFiltros(){
     input.focus();
     input.select();
   });
-  document.getElementById('filtroPersistencia').addEventListener('input', e => {
-    let v = Number(e.target.value); if(isNaN(v)) v = 0; v = Math.max(0, Math.min(100, v));
-    filtros.persistencia = v; renderAll();
+  document.getElementById('filtroFechaIngreso').addEventListener('change', e => {
+    if(filtros.colaborador === "TODOS") return; // deshabilitado, pero por seguridad no hace nada
+    setFechaIngreso(filtros.colaborador, e.target.value);
+    sincronizarInfoPersistencia();
+    renderAll();
   });
 }
 
@@ -1115,10 +1604,16 @@ function abrirModalTransaccion(transaccion){
     document.getElementById('fPrimaBasica').value = transaccion.primaBasicaAnual || "";
     document.getElementById('fPrimaExceso').value = transaccion.primaExcesoAnual || "";
     document.getElementById('fK').value = (transaccion.k === null || transaccion.k === undefined) ? "" : transaccion.k;
+    document.getElementById('fEstado').value = transaccion.estado || "vigente";
+    document.getElementById('fFechaTermino').value = transaccion.fechaTermino || "";
+    document.getElementById('fEndosoNeto').value = (transaccion.endosoNeto === null || transaccion.endosoNeto === undefined || transaccion.endosoNeto === 0) ? "" : transaccion.endosoNeto;
     actualizarVisibilidadExceso();
+    actualizarVisibilidadFechaTermino();
   } else {
     titulo.innerHTML = '<i class="fa-solid fa-circle-plus text-indigo-600"></i> Nueva transacción / póliza';
     btnGuardar.innerHTML = '<i class="fa-solid fa-plus"></i> <span>Agregar transacción</span>';
+    document.getElementById('fEstado').value = "vigente";
+    actualizarVisibilidadFechaTermino();
   }
   document.getElementById('modalTransaccion').classList.remove('hidden');
 }
@@ -1131,6 +1626,7 @@ function cerrarModalTransaccion(){
 function initFormulario(){
   poblarSelectProducto();
   document.getElementById('fProducto').addEventListener('change', actualizarVisibilidadExceso);
+  document.getElementById('fEstado').addEventListener('change', actualizarVisibilidadFechaTermino);
 
   document.getElementById('btnNuevaTransaccion').addEventListener('click', () => abrirModalTransaccion(null));
   document.getElementById('btnCerrarModalTransaccion').addEventListener('click', cerrarModalTransaccion);
@@ -1155,6 +1651,9 @@ function initFormulario(){
       const k = Number(kValorCampo);
       const p = productById(productoId);
       const primaExcesoAnual = (p && p.usaExceso) ? (Number(document.getElementById('fPrimaExceso').value) || 0) : 0;
+      const estado = document.getElementById('fEstado').value;
+      const fechaTermino = document.getElementById('fFechaTermino').value;
+      const endosoNeto = Number(document.getElementById('fEndosoNeto').value) || 0;
 
       if(!colaborador) throw new Error("Ingresa el nombre del colaborador.");
       if(!cliente) throw new Error("Ingresa el nombre del cliente.");
@@ -1163,8 +1662,9 @@ function initFormulario(){
       if(!fechaSometimiento) throw new Error("Ingresa la Fecha de Sometimiento.");
       if(isNaN(primaBasicaAnual) || primaBasicaAnual <= 0) throw new Error("La Prima Básica Anual debe ser un número mayor a 0.");
       if(kValorCampo === "" || isNaN(k) || k < 0) throw new Error("Ingresa el valor de k (Capital, UF) — usa 0 si la póliza no tiene Capital.");
+      if(estado !== "vigente" && !fechaTermino) throw new Error("Ingresa la Fecha Término (o vuelve a marcar la póliza como Vigente).");
 
-      const datos = { colaborador, cliente, productoId, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k };
+      const datos = { colaborador, cliente, productoId, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k, estado, fechaTermino, endosoNeto };
 
       if(editandoId){
         const idx = transactions.findIndex(t => t.id === editandoId);
@@ -1197,8 +1697,20 @@ const ENCABEZADOS_ESPERADOS = {
   fechaCierre: ["fecha","fecha cierre","fecha de cierre"],
   primaBasicaAnual: ["prima básica anual (uf)","prima basica anual (uf)","prima básica anual","prima basica anual","prima básica (uf)","prima basica","pb"],
   primaExcesoAnual: ["prima exceso anual (uf)","prima exceso anual","prima exceso (uf)","prima exceso","exc"],
-  k: ["k","capital","k (capital)"]
+  k: ["k","capital","k (capital)"],
+  estado: ["estado","estado póliza","estado poliza"],
+  fechaTermino: ["fecha término","fecha termino","fecha de término","fecha de termino","f. término","f. termino"],
+  endosoNeto: ["endoso neto","endoso neto (ufa)","endoso","endoso neto acumulado"]
 };
+
+// Normaliza el texto de la columna Estado a los 3 valores internos válidos; "" -> "vigente" (default).
+function normalizarEstadoPoliza(valor){
+  const t = normalizarEncabezado(valor);
+  if(!t || t.includes("vigente") && !t.includes("no ")) return "vigente";
+  if(t.includes("no vigente") || t === "no") return "no_vigente";
+  if(t.includes("siniestr")) return "siniestrada";
+  return "vigente";
+}
 
 function normalizarEncabezado(str){
   return String(str||"").trim().toLowerCase();
@@ -1246,13 +1758,16 @@ function mapearFila(fila){
   const primaExcesoAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaExcesoAnual)) || 0;
   const kRaw = buscar(ENCABEZADOS_ESPERADOS.k);
   const k = Number(kRaw);
+  const estado = normalizarEstadoPoliza(buscar(ENCABEZADOS_ESPERADOS.estado));
+  const fechaTermino = normalizarFechaISO(buscar(ENCABEZADOS_ESPERADOS.fechaTermino));
+  const endosoNeto = Number(buscar(ENCABEZADOS_ESPERADOS.endosoNeto)) || 0;
 
   // k (Capital, UF) es obligatorio: una celda vacía/ausente descarta la fila, igual que Prima Básica.
   // 0 sí es un valor válido (póliza sin Capital) - lo que se rechaza es la ausencia del dato.
   const kAusente = kRaw === undefined || kRaw === null || String(kRaw).trim() === "";
   if(!colaborador || !producto || isNaN(primaBasicaAnual) || kAusente || isNaN(k) || k < 0) return null;
 
-  return construirTransaccion({ colaborador, cliente, productoId: producto.id, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k });
+  return construirTransaccion({ colaborador, cliente, productoId: producto.id, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k, estado, fechaTermino, endosoNeto });
 }
 
 const ENCABEZADOS_UF = {
@@ -1280,6 +1795,25 @@ function mapearFilaUF(fila){
   const valor = Number(buscar(ENCABEZADOS_UF.valor));
   if(!anio || !mes || mes < 1 || mes > 12 || isNaN(valor)) return null;
   return { anio, mes, valor };
+}
+
+const ENCABEZADOS_FECHA_INGRESO = {
+  colaborador: ["colaborador","agente","agentes","nombre colaborador"],
+  fechaIngreso: ["fecha de ingreso","fecha ingreso","fecha de ingreso a la compañía","fecha de ingreso a la compania"]
+};
+
+function mapearFilaFechaIngreso(fila){
+  const claves = Object.keys(fila);
+  const buscar = (opciones) => {
+    for(const clave of claves){
+      if(opciones.includes(normalizarEncabezado(clave))) return fila[clave];
+    }
+    return undefined;
+  };
+  const colaborador = String(buscar(ENCABEZADOS_FECHA_INGRESO.colaborador) ?? "").trim();
+  const fechaIngreso = normalizarFechaISO(buscar(ENCABEZADOS_FECHA_INGRESO.fechaIngreso));
+  if(!colaborador || !fechaIngreso) return null;
+  return { colaborador, fechaIngreso };
 }
 
 function initCargaExcel(){
@@ -1326,11 +1860,28 @@ function initCargaExcel(){
           if(mesesUFCargados > 0) valoresUF = nuevaTablaUF;
         }
 
+        // Hoja de Fecha de Ingreso por colaborador: si el archivo la trae, reemplaza la tabla actual
+        // (mismo criterio "reemplaza" que Registro_Ventas y Valor_UF_Mensual). Es el único dato manual
+        // que necesita la Persistencia automática - todo lo demás sale del estado de las pólizas.
+        const nombreHojaFechaIngreso = wb.SheetNames.find(n => normalizarEncabezado(n).replace(/_/g,' ').includes("fecha de ingreso") || normalizarEncabezado(n).replace(/_/g,' ').includes("fecha ingreso"));
+        let filasFechaIngresoCargadas = 0;
+        if(nombreHojaFechaIngreso){
+          const filasFI = XLSX.utils.sheet_to_json(wb.Sheets[nombreHojaFechaIngreso], { defval: "" });
+          const nuevaTablaFI = {};
+          filasFI.forEach(fila => {
+            const r = mapearFilaFechaIngreso(fila);
+            if(r) nuevaTablaFI[r.colaborador] = r.fechaIngreso;
+          });
+          filasFechaIngresoCargadas = Object.keys(nuevaTablaFI).length;
+          if(filasFechaIngresoCargadas > 0) fechaIngresoPorColaborador = nuevaTablaFI;
+        }
+
         sincronizarInputValorUF();
+        sincronizarInfoPersistencia();
         renderAll();
         revisarValorUFPeriodoActual();
         const sinEmision = nuevas.filter(t => !t.fechaEmision).length;
-        toast(`Se cargaron ${nuevas.length} transacciones desde "${file.name}"${descartadas ? ` (${descartadas} filas descartadas por datos incompletos)` : ""}${sinEmision ? ` · ${sinEmision} sin Fecha de Emisión quedaron como pendientes` : ""}${mesesUFCargados ? ` · ${mesesUFCargados} valores de UF mensual cargados` : ""}.`, "success");
+        toast(`Se cargaron ${nuevas.length} transacciones desde "${file.name}"${descartadas ? ` (${descartadas} filas descartadas por datos incompletos)` : ""}${sinEmision ? ` · ${sinEmision} sin Fecha de Emisión quedaron como pendientes` : ""}${mesesUFCargados ? ` · ${mesesUFCargados} valores de UF mensual cargados` : ""}${filasFechaIngresoCargadas ? ` · ${filasFechaIngresoCargadas} fechas de ingreso cargadas` : ""}.`, "success");
       } catch(err){
         console.error("Error al procesar el Excel", err);
         toast("Error al leer el Excel: " + (err.message || "formato no reconocido."), "error");
@@ -1370,7 +1921,10 @@ function initGuardarExcel(){
           "UFAS TOTAL": (Number(t.primaBasicaAnual) || 0) + (Number(t.primaExcesoAnual) || 0),
           "k": Number(t.k) || 0,
           "fecha": t.fechaCierre ? new Date(t.fechaCierre + "T00:00:00") : "",
-          "Cliente": t.cliente || ""
+          "Cliente": t.cliente || "",
+          "Estado": t.estado === "no_vigente" ? "No vigente" : t.estado === "siniestrada" ? "Siniestrada" : "Vigente",
+          "Fecha Término": t.fechaTermino ? new Date(t.fechaTermino + "T00:00:00") : "",
+          "Endoso Neto (UFA)": Number(t.endosoNeto) || 0
         };
       });
       const wsRegistro = XLSX.utils.json_to_sheet(filasRegistro);
@@ -1385,23 +1939,36 @@ function initGuardarExcel(){
         if(wsRegistro[`A${fila}`] && wsRegistro[`A${fila}`].t === 'n') wsRegistro[`A${fila}`].z = 'mmmm yyyy';
         if(wsRegistro[`B${fila}`] && wsRegistro[`B${fila}`].t === 'n') wsRegistro[`B${fila}`].z = 'mmmm yyyy';
         if(wsRegistro[`L${fila}`] && wsRegistro[`L${fila}`].t === 'n') wsRegistro[`L${fila}`].z = 'dd-mm-yyyy';
+        if(wsRegistro[`O${fila}`] && wsRegistro[`O${fila}`].t === 'n') wsRegistro[`O${fila}`].z = 'dd-mm-yyyy';
       }
       XLSX.utils.book_append_sheet(wb, wsRegistro, "Registro_Ventas");
 
       const valorUFActual = getValorUF(filtros.anio, filtros.mes);
       const colaboradores = colaboradoresConDatos(filtros.anio, filtros.mes);
       const filasResumen = colaboradores
-        .map(c => calcularColaboradorMes(c, filtros.anio, filtros.mes, filtros.persistencia))
+        .map(c => calcularColaboradorMes(c, filtros.anio, filtros.mes))
         .sort((a,b) => b.total - a.total)
         .map(d => ({
           "Colaborador": d.colaborador,
-          "PP (UF)": Number(d.pp.toFixed(2)),
-          "Bono Venta (UF)": Number(d.bonoVenta.toFixed(2)),
-          "Premio Persistencia (UF)": Number(d.premioPersistencia.toFixed(2)),
+          "PP Agentes (UF)": Number(d.ppAgentes.toFixed(2)),
+          "Bono Venta Agentes (UF)": Number(d.bonoVentaAgentes.toFixed(2)),
+          "Persistencia % Agentes": d.persistenciaPctAgentes == null ? "Sin dato" : d.persistenciaPctAgentes,
+          "Premio Persistencia Agentes (UF)": Number(d.premioPersistenciaAgentes.toFixed(2)),
+          "PP Salud (UF)": Number(d.ppSalud.toFixed(2)),
+          "Bono Venta Salud (UF)": Number(d.bonoVentaSalud.toFixed(2)),
+          "Persistencia % Salud": d.persistenciaPctSalud == null ? "Sin dato" : d.persistenciaPctSalud,
+          "Premio Persistencia Salud (UF)": Number(d.premioPersistenciaSalud.toFixed(2)),
           "Recaudación (UF)": Number(d.recaudacion.toFixed(2)),
+          "Comisión Suscripción Contrato (UF)": Number(d.comisionSuscripcion.toFixed(2)),
+          "Premio Emisión Mensual Contrato (UF)": Number(d.premioEmisionMensual.toFixed(2)),
           "Comisión Capital (UF)": Number(d.comisionCapital.toFixed(2)),
+          "Cumple mínimo Comisión Capital": d.cumpleMinimoCapital ? "Sí" : "No",
+          "Premio Productividad aplicado": d.aplicaProductividad ? "Sí" : "No",
+          "Permanencia % Contrato": d.permanenciaContrato == null ? "Sin dato" : d.permanenciaContrato,
+          "Bono Tamaño Cartera (CLP)": Math.round(d.bonoTamanoCarteraCLP || 0),
+          "Premio Anual Permanencia (UF)": Number((d.premioPermanenciaAnual||0).toFixed(2)),
           "Total (UF)": Number(d.total.toFixed(2)),
-          "Total (CLP aprox)": valorUFActual != null ? Math.round(d.total * valorUFActual) : ""
+          "Total (CLP aprox, incl. Bono Tamaño Cartera)": (valorUFActual != null ? Math.round(d.total * valorUFActual) : 0) + Math.round(d.bonoTamanoCarteraCLP || 0)
         }));
       const wsResumen = XLSX.utils.json_to_sheet(filasResumen.length ? filasResumen : [{ "Aviso": `Sin transacciones con Fecha de Emisión en ${MESES[filtros.mes-1]} ${filtros.anio}` }]);
       XLSX.utils.book_append_sheet(wb, wsResumen, `Resumen_${MESES[filtros.mes-1]}_${filtros.anio}`);
@@ -1414,9 +1981,22 @@ function initGuardarExcel(){
       const wsValorUF = XLSX.utils.json_to_sheet(filasUF);
       XLSX.utils.book_append_sheet(wb, wsValorUF, "Valor_UF_Mensual");
 
+      // Fecha de Ingreso por colaborador (persistida completa, no solo el período filtrado) - se
+      // guarda igual que Valor_UF_Mensual para que no se pierda al volver a cargar el Excel. Es el
+      // único dato manual que necesita la Persistencia automática (todo lo demás sale de las pólizas).
+      const filasFechaIngreso = Object.keys(fechaIngresoPorColaborador)
+        .sort((a,b) => a.localeCompare(b,'es'))
+        .map(colaborador => ({ "Colaborador": colaborador, "Fecha de Ingreso": new Date(fechaIngresoPorColaborador[colaborador] + "T00:00:00") }));
+      const wsFechaIngreso = XLSX.utils.json_to_sheet(filasFechaIngreso.length ? filasFechaIngreso : [{ "Aviso": "Sin fechas de ingreso cargadas todavía" }]);
+      if(filasFechaIngreso.length){
+        for(let fila = 2; fila <= filasFechaIngreso.length + 1; fila++){
+          if(wsFechaIngreso[`B${fila}`] && wsFechaIngreso[`B${fila}`].t === 'n') wsFechaIngreso[`B${fila}`].z = 'dd-mm-yyyy';
+        }
+      }
+      XLSX.utils.book_append_sheet(wb, wsFechaIngreso, "Fecha_Ingreso_Colaborador");
+
       const wsParametros = XLSX.utils.json_to_sheet([{
         "Valor UF de cierre del mes filtrado ($)": valorUFActual != null ? valorUFActual : "Sin dato",
-        "Persistencia % del agente": filtros.persistencia,
         "Año filtro": filtros.anio,
         "Mes filtro": MESES[filtros.mes-1],
         "Generado": new Date().toLocaleString('es-CL')
