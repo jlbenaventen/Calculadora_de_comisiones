@@ -193,7 +193,7 @@
       <span id="rankingContexto" class="text-xs text-slate-400"></span>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm min-w-[820px]">
+      <table class="w-full text-sm min-w-[920px]">
         <thead>
           <tr class="text-left text-xs text-slate-500 uppercase border-b border-slate-200">
             <th class="py-2 pr-3">#</th>
@@ -202,6 +202,7 @@
             <th class="py-2 pr-3 text-right">Bono Venta (UF)</th>
             <th class="py-2 pr-3 text-right">Persistencia (UF)</th>
             <th class="py-2 pr-3 text-right">Recaudación (UF)</th>
+            <th class="py-2 pr-3 text-right">Comisión Capital (UF)</th>
             <th class="py-2 pr-3 text-right">Total (UF)</th>
             <th class="py-2 text-right">Total (CLP)</th>
           </tr>
@@ -215,14 +216,15 @@
   <!-- ==================== VISTA: HISTORIAL DE TRANSACCIONES ==================== -->
   <div id="vistaHistorial" class="hidden">
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between mb-1">
       <div class="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
-        <i class="fa-solid fa-database"></i> Historial de transacciones (base de datos)
+        <i class="fa-solid fa-database"></i> Historial de transacciones
       </div>
       <span class="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-medium">
         <span id="contadorRegistros">0</span> registros
       </span>
     </div>
+    <p id="historialContexto" class="text-[11px] text-slate-400 mb-3"></p>
     <div class="overflow-x-auto max-h-96 overflow-y-auto">
       <table class="w-full text-sm min-w-[1520px]">
         <thead class="sticky top-0 bg-white">
@@ -333,9 +335,9 @@
         </div>
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">k (Capital, UF) &mdash; opcional</label>
-        <input id="fK" type="number" step="0.01" min="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-        <p class="text-[11px] text-slate-400 mt-1">Solo se guarda; esta calculadora todavía no calcula la Comisión Capital a partir de este valor.</p>
+        <label class="block text-xs font-medium text-slate-500 mb-1">k (Capital, UF)</label>
+        <input id="fK" type="number" step="0.01" min="0" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        <p class="text-[11px] text-slate-400 mt-1">Ingresa 0 si la póliza no tiene Capital. Se guarda; esta calculadora todavía no calcula la Comisión Capital a partir de este valor.</p>
       </div>
       <p id="formError" class="text-xs text-red-600 hidden"></p>
       <button type="submit" id="btnGuardarTransaccion" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition text-white text-sm font-semibold px-4 py-2.5 rounded-lg">
@@ -380,7 +382,7 @@
    del usuario, sin servidor que valide nada) - es solo un aviso de vigencia basado en el
    reloj del propio computador, pensado para avisar cuándo toca pedir una versión nueva,
    no como medida de seguridad contra alguien que decida cambiar la fecha de su equipo. */
-const APP_VERSION = "V1.0";
+const APP_VERSION = "V1.3";
 const FECHA_LANZAMIENTO_VERSION = "2026-08-25"; // fecha en que se generó esta versión
 const DIAS_VIGENCIA_VERSION = 45;
 
@@ -440,6 +442,37 @@ const TRAMOS_PERSISTENCIA = [
   { desde: 83,   factor: 0.50 },
   { desde: -Infinity, factor: 0.00 }
 ];
+
+// Comisión por Capital (Régimen Contrato) - Tabla 3.2 del CONTRATO.pdf, tramos marginales (por mil, ‰)
+// sobre el "capital equivalente" del mes (que en esta calculadora es el valor k que se ingresa
+// manualmente por póliza - ver nota más abajo sobre lo que NO está implementado de esta cláusula).
+const TRAMOS_CAPITAL = [
+  { desde: 0,     hasta: 1500,     tasaPorMil: 0.8 },
+  { desde: 1500,  hasta: 3000,     tasaPorMil: 1.6 },
+  { desde: 3000,  hasta: 4500,     tasaPorMil: 2.4 },
+  { desde: 4500,  hasta: 6500,     tasaPorMil: 3.1 },
+  { desde: 6500,  hasta: 9500,     tasaPorMil: 3.7 },
+  { desde: 9500,  hasta: 12500,    tasaPorMil: 4.2 },
+  { desde: 12500, hasta: Infinity, tasaPorMil: 4.7 }
+];
+const TOPE_COMISION_CAPITAL_UF = 75; // tope mensual explícito del contrato (Cláusula I.3)
+
+// Aplica la Tabla 3.2 de forma marginal (por tramos) sobre el capital equivalente total del mes,
+// no sobre cada póliza por separado - así lo hace el ejemplo del propio contrato.
+// Verificado contra el ejemplo del PDF: capital equivalente 8.205 UF -> comisión 19,7 UF.
+function comisionCapitalDesdeK(capitalEquivalenteTotal){
+  let restante = Number(capitalEquivalenteTotal) || 0;
+  if(restante <= 0) return 0;
+  let total = 0;
+  for(const tramo of TRAMOS_CAPITAL){
+    if(restante <= 0) break;
+    const anchoTramo = tramo.hasta - tramo.desde;
+    const monto = Math.min(restante, anchoTramo);
+    total += monto * (tramo.tasaPorMil / 1000);
+    restante -= monto;
+  }
+  return Math.min(total, TOPE_COMISION_CAPITAL_UF);
+}
 
 const PRODUCTS = [
   { id:"ahorro_familiar",     nombre:"Ahorro Familiar",                          regimen:"agentes", usaExceso:true,  recBasica:0.195, recExceso:0.065, topeExceso:1.67 },
@@ -613,12 +646,15 @@ function factorPersistencia(pct){
 // nunca sobre una PP ya sumada entre varios colaboradores (evita sobreestimar el bono consolidado).
 function calcularColaboradorMes(colaborador, anio, mes, persistenciaPct){
   const txs = transactions.filter(t => t.colaborador === colaborador && Number(t.anio) === Number(anio) && Number(t.mes) === Number(mes));
-  let pp = 0, recAgentesSalud = 0, recContrato = 0;
+  let pp = 0, recAgentesSalud = 0, recContrato = 0, kTotalContrato = 0;
   txs.forEach(t => {
     const p = productById(t.productoId);
     if(!p) return;
     if(p.regimen === "contrato"){
       recContrato += recaudacionPoliza(t);
+      // Comisión por Capital (Tabla 3.2) es exclusiva de Régimen Contrato (así lo dice el
+      // CONTRATO.pdf - lista de productos de la cláusula SEGUNDO coincide con este régimen).
+      kTotalContrato += Number(t.k) || 0;
     } else {
       pp += ppPoliza(t);
       recAgentesSalud += recaudacionPoliza(t);
@@ -628,8 +664,11 @@ function calcularColaboradorMes(colaborador, anio, mes, persistenciaPct){
   bonoVenta = Math.min(bonoVenta, TOPE_BONO_VENTA_UF);
   const premioPersistencia = bonoVenta * factorPersistencia(Number(persistenciaPct) || 0);
   const recaudacion = recAgentesSalud + recContrato;
-  const total = bonoVenta + premioPersistencia + recaudacion;
-  return { colaborador, pp, bonoVenta, premioPersistencia, recAgentesSalud, recContrato, recaudacion, total, nTransacciones: txs.length };
+  // Tabla 3.2 se aplica UNA VEZ por mes sobre la SUMA de k del mes (capital equivalente total),
+  // no póliza por póliza - de lo contrario se subestimarían los tramos altos.
+  const comisionCapital = comisionCapitalDesdeK(kTotalContrato);
+  const total = bonoVenta + premioPersistencia + recaudacion + comisionCapital;
+  return { colaborador, pp, bonoVenta, premioPersistencia, recAgentesSalud, recContrato, recaudacion, kTotalContrato, comisionCapital, total, nTransacciones: txs.length };
 }
 
 function colaboradoresConDatos(anio, mes){
@@ -644,9 +683,10 @@ function calcularVista(anio, mes, colaboradorFiltro, persistenciaPct){
     const detalles = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct));
     const agg = detalles.reduce((acc, d) => {
       acc.pp += d.pp; acc.bonoVenta += d.bonoVenta; acc.premioPersistencia += d.premioPersistencia;
-      acc.recAgentesSalud += d.recAgentesSalud; acc.recContrato += d.recContrato; acc.recaudacion += d.recaudacion; acc.total += d.total;
+      acc.recAgentesSalud += d.recAgentesSalud; acc.recContrato += d.recContrato; acc.recaudacion += d.recaudacion;
+      acc.kTotalContrato += d.kTotalContrato; acc.comisionCapital += d.comisionCapital; acc.total += d.total;
       return acc;
-    }, { pp:0, bonoVenta:0, premioPersistencia:0, recAgentesSalud:0, recContrato:0, recaudacion:0, total:0 });
+    }, { pp:0, bonoVenta:0, premioPersistencia:0, recAgentesSalud:0, recContrato:0, recaudacion:0, kTotalContrato:0, comisionCapital:0, total:0 });
     return { modo:"TODOS", agg, detalles };
   }
   const d = calcularColaboradorMes(colaboradorFiltro, anio, mes, persistenciaPct);
@@ -768,8 +808,6 @@ function escapeHtml(str){
 /* ==================== RENDER ==================== */
 function renderAll(){
   document.getElementById('totalRegistrosHeader').textContent = transactions.length;
-  document.getElementById('contadorRegistros').textContent = transactions.length;
-  document.getElementById('contadorRegistrosTab').textContent = transactions.length;
   poblarSelectColaboradorFiltro();
   poblarDatalistColaboradores();
   poblarDatalistClientes();
@@ -814,7 +852,8 @@ function renderDesglose(vista){
     { concepto:"Bono de Venta", base:`PP = ${fmtUF(a.pp)} UF`, tasa: fmtPct(tasa) + (a.bonoVenta >= TOPE_BONO_VENTA_UF && a.pp*tasa > TOPE_BONO_VENTA_UF ? " (topado 65 UF)" : ""), uf:a.bonoVenta },
     { concepto:"Premio por Persistencia (24 meses)", base:`Bono Venta = ${fmtUF(a.bonoVenta)} UF · Persistencia ${filtros.persistencia}%`, tasa: fmtPct(factorPers), uf:a.premioPersistencia },
     { concepto:"Recaudación / Mantención — Agentes y Salud", base:"Prima básica/exceso mensual de pólizas Agentes + Salud", tasa:"según producto", uf:a.recAgentesSalud },
-    { concepto:"Recaudación / Mantención — Contrato Tradicional", base:"Prima básica/exceso mensual de pólizas Contrato", tasa:"según producto", uf:a.recContrato }
+    { concepto:"Recaudación / Mantención — Contrato Tradicional", base:"Prima básica/exceso mensual de pólizas Contrato", tasa:"según producto", uf:a.recContrato },
+    { concepto:"Comisión por Capital — Contrato Tradicional", base:`Suma de k del mes (capital equivalente) = ${fmtUF(a.kTotalContrato)} UF`, tasa: "Tabla 3.2 marginal (tope 75 UF/mes por colaborador)" + (vista.detalles.some(d => d.comisionCapital >= TOPE_COMISION_CAPITAL_UF && d.kTotalContrato > 0) ? " — algún colaborador topado" : ""), uf:a.comisionCapital }
   ];
   const tbody = document.getElementById('tablaDesglose');
   tbody.innerHTML = filas.map(f => `
@@ -839,7 +878,7 @@ function renderRanking(anio, mes, persistenciaPct){
   const filas = colaboradores.map(c => calcularColaboradorMes(c, anio, mes, persistenciaPct)).sort((x,y) => y.total - x.total);
   const tbody = document.getElementById('tablaRanking');
   if(filas.length === 0){
-    tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 text-sm">Sin transacciones con Fecha de Emisión en ${MESES[mes-1]} ${anio}.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400 text-sm">Sin transacciones con Fecha de Emisión en ${MESES[mes-1]} ${anio}.</td></tr>`;
     return;
   }
   tbody.innerHTML = filas.map((f, i) => `
@@ -850,18 +889,41 @@ function renderRanking(anio, mes, persistenciaPct){
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.bonoVenta)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.premioPersistencia)}</td>
       <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.recaudacion)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmtUF(f.comisionCapital)}</td>
       <td class="py-2 pr-3 text-right tabular-nums font-semibold">${fmtUF(f.total)}</td>
       <td class="py-2 text-right tabular-nums">${celdaCLP(f.total, valorUF)}</td>
     </tr>`).join('');
 }
 
+// El Historial se filtra por el mismo Año/Mes que el resto de la app, pero comparando TANTO
+// Fecha Sometimiento como Fecha Emisión (una póliza aparece si cualquiera de las dos cae en el
+// período filtrado) - así las pólizas "Pendientes" (sin Fecha Emisión aún) igual se ven, bajo su
+// mes de Sometimiento, en vez de desaparecer del Historial hasta que se les complete la Emisión.
+function transaccionesEnPeriodo(anio, mes){
+  return transactions.filter(t => {
+    const som = derivarAnioMes(t.fechaSometimiento);
+    const emi = derivarAnioMes(t.fechaEmision);
+    const coincideSom = som.anio === Number(anio) && som.mes === Number(mes);
+    const coincideEmi = emi.anio === Number(anio) && emi.mes === Number(mes);
+    return coincideSom || coincideEmi;
+  });
+}
+
 function renderHistorial(){
   const tbody = document.getElementById('tablaHistorial');
-  if(transactions.length === 0){
-    tbody.innerHTML = `<tr><td colspan="14" class="py-6 text-center text-slate-400 text-sm">No hay transacciones cargadas. Agrega una con el formulario o carga un Excel.</td></tr>`;
+  const contexto = document.getElementById('historialContexto');
+  const enPeriodo = transaccionesEnPeriodo(filtros.anio, filtros.mes);
+  document.getElementById('contadorRegistros').textContent = enPeriodo.length;
+  document.getElementById('contadorRegistrosTab').textContent = enPeriodo.length;
+  contexto.textContent = `${MESES[filtros.mes-1]} ${filtros.anio} · por Fecha Sometimiento o Fecha Emisión · ${transactions.length} en total en la base de datos`;
+  if(enPeriodo.length === 0){
+    const mensaje = transactions.length === 0
+      ? "No hay transacciones cargadas. Agrega una con el formulario o carga un Excel."
+      : `No hay transacciones (por Sometimiento o Emisión) en ${MESES[filtros.mes-1]} ${filtros.anio}. Cambia el filtro de Año/Mes para ver otro período.`;
+    tbody.innerHTML = `<tr><td colspan="14" class="py-6 text-center text-slate-400 text-sm">${mensaje}</td></tr>`;
     return;
   }
-  const ordenado = [...transactions].sort((a,b) => (b.fechaEmision||b.fechaSometimiento||"").localeCompare(a.fechaEmision||a.fechaSometimiento||"") || a.colaborador.localeCompare(b.colaborador,'es'));
+  const ordenado = [...enPeriodo].sort((a,b) => (b.fechaEmision||b.fechaSometimiento||"").localeCompare(a.fechaEmision||a.fechaSometimiento||"") || a.colaborador.localeCompare(b.colaborador,'es'));
   tbody.innerHTML = ordenado.map(t => {
     const p = productById(t.productoId);
     const pendiente = !t.fechaEmision;
@@ -1052,7 +1114,7 @@ function abrirModalTransaccion(transaccion){
     document.getElementById('fFechaCierre').value = transaccion.fechaCierre || "";
     document.getElementById('fPrimaBasica').value = transaccion.primaBasicaAnual || "";
     document.getElementById('fPrimaExceso').value = transaccion.primaExcesoAnual || "";
-    document.getElementById('fK').value = transaccion.k || "";
+    document.getElementById('fK').value = (transaccion.k === null || transaccion.k === undefined) ? "" : transaccion.k;
     actualizarVisibilidadExceso();
   } else {
     titulo.innerHTML = '<i class="fa-solid fa-circle-plus text-indigo-600"></i> Nueva transacción / póliza';
@@ -1089,7 +1151,8 @@ function initFormulario(){
       const fechaEmision = document.getElementById('fFechaEmision').value;
       const fechaCierre = document.getElementById('fFechaCierre').value;
       const primaBasicaAnual = Number(document.getElementById('fPrimaBasica').value);
-      const k = Number(document.getElementById('fK').value) || 0;
+      const kValorCampo = document.getElementById('fK').value.trim();
+      const k = Number(kValorCampo);
       const p = productById(productoId);
       const primaExcesoAnual = (p && p.usaExceso) ? (Number(document.getElementById('fPrimaExceso').value) || 0) : 0;
 
@@ -1099,6 +1162,7 @@ function initFormulario(){
       if(!p) throw new Error("Selecciona un producto válido.");
       if(!fechaSometimiento) throw new Error("Ingresa la Fecha de Sometimiento.");
       if(isNaN(primaBasicaAnual) || primaBasicaAnual <= 0) throw new Error("La Prima Básica Anual debe ser un número mayor a 0.");
+      if(kValorCampo === "" || isNaN(k) || k < 0) throw new Error("Ingresa el valor de k (Capital, UF) — usa 0 si la póliza no tiene Capital.");
 
       const datos = { colaborador, cliente, productoId, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k };
 
@@ -1180,9 +1244,13 @@ function mapearFila(fila){
   const fechaCierre = normalizarFechaISO(buscar(ENCABEZADOS_ESPERADOS.fechaCierre));
   const primaBasicaAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaBasicaAnual));
   const primaExcesoAnual = Number(buscar(ENCABEZADOS_ESPERADOS.primaExcesoAnual)) || 0;
-  const k = Number(buscar(ENCABEZADOS_ESPERADOS.k)) || 0;
+  const kRaw = buscar(ENCABEZADOS_ESPERADOS.k);
+  const k = Number(kRaw);
 
-  if(!colaborador || !producto || isNaN(primaBasicaAnual)) return null;
+  // k (Capital, UF) es obligatorio: una celda vacía/ausente descarta la fila, igual que Prima Básica.
+  // 0 sí es un valor válido (póliza sin Capital) - lo que se rechaza es la ausencia del dato.
+  const kAusente = kRaw === undefined || kRaw === null || String(kRaw).trim() === "";
+  if(!colaborador || !producto || isNaN(primaBasicaAnual) || kAusente || isNaN(k) || k < 0) return null;
 
   return construirTransaccion({ colaborador, cliente, productoId: producto.id, propuesta, poliza, fechaSometimiento, fechaEmision, fechaCierre, primaBasicaAnual, primaExcesoAnual, k });
 }
@@ -1331,6 +1399,7 @@ function initGuardarExcel(){
           "Bono Venta (UF)": Number(d.bonoVenta.toFixed(2)),
           "Premio Persistencia (UF)": Number(d.premioPersistencia.toFixed(2)),
           "Recaudación (UF)": Number(d.recaudacion.toFixed(2)),
+          "Comisión Capital (UF)": Number(d.comisionCapital.toFixed(2)),
           "Total (UF)": Number(d.total.toFixed(2)),
           "Total (CLP aprox)": valorUFActual != null ? Math.round(d.total * valorUFActual) : ""
         }));
