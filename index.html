@@ -43,6 +43,9 @@
         <p class="text-xs text-slate-400 flex items-center gap-1.5">
           <span id="estadoDot" class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
           <span id="estadoTexto">Datos de ejemplo cargados &middot; <span id="totalRegistrosHeader">0</span> transacciones</span>
+          <span class="text-slate-300">&middot;</span>
+          <i class="fa-solid fa-floppy-disk text-slate-500"></i>
+          <span>Guardado automático en este navegador</span>
         </p>
       </div>
     </div>
@@ -56,6 +59,9 @@
       </button>
       <button id="btnGuardarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 transition text-sm font-medium px-3.5 py-2 rounded-lg">
         <i class="fa-solid fa-file-arrow-down"></i> <span class="hidden sm:inline">Guardar en Excel</span>
+      </button>
+      <button id="btnBorrarDatos" title="Borra todo lo guardado en este navegador y empieza de cero" class="flex items-center gap-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 transition text-sm font-medium px-3 py-2 rounded-lg">
+        <i class="fa-solid fa-trash-can"></i>
       </button>
     </div>
   </div>
@@ -426,7 +432,7 @@
    del usuario, sin servidor que valide nada) - es solo un aviso de vigencia basado en el
    reloj del propio computador, pensado para avisar cuándo toca pedir una versión nueva,
    no como medida de seguridad contra alguien que decida cambiar la fecha de su equipo. */
-const APP_VERSION = "V1.7";
+const APP_VERSION = "V1.8";
 const FECHA_LANZAMIENTO_VERSION = "2026-08-25"; // fecha en que se generó esta versión
 const DIAS_VIGENCIA_VERSION = 45;
 
@@ -761,6 +767,43 @@ function mesesAntiguedadColaborador(colaborador, anioRef, mesRef){
 setFechaIngreso("Virginia", "2023-01-15");
 setFechaIngreso("Carolina", "2024-06-01");
 setFechaIngreso("Gisela", "2026-01-05");
+
+/* ==================== GUARDADO AUTOMÁTICO EN EL NAVEGADOR (localStorage) ====================
+   Sin esto, cualquier F5, cierre del navegador o reapertura del archivo hacía perder TODO lo
+   ingresado (transacciones, Valor UF, Fecha de Ingreso) porque solo vivía en la memoria de la
+   pestaña abierta - un simple "Actualizar" del navegador volvía a cargar el archivo desde cero,
+   con las 10 transacciones de ejemplo de siempre. Ahora se guarda solo, después de cada cambio, y
+   se restaura apenas se abre el archivo: las transacciones de ejemplo solo se ven la primerísima
+   vez que se abre este archivo en este navegador — después, siempre se ve lo último que quedó
+   guardado (aunque haya quedado vacío, porque el usuario lo dejó así a propósito).
+   Límite real, para ser honesto sobre lo que esto es y no es: este guardado vive en ESTE navegador
+   y en ESTE computador únicamente - no es una base de datos compartida ni sincronizada. Si se abre
+   el archivo en otro navegador, en otro computador, o se borran los datos de navegación (caché/
+   cookies) de este navegador, no va a estar. El respaldo real y portable para llevar los datos a
+   otro lado (o para no perderlos si algo raro pasa con el navegador) sigue siendo "Guardar Excel". */
+const LOCALSTORAGE_KEY = "calculadora_comisiones_estado_v1";
+function guardarEstadoLocal(){
+  try {
+    localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify({ transactions, valoresUF, fechaIngresoPorColaborador }));
+  } catch(e){ console.error("No se pudo guardar automáticamente en este navegador (localStorage)", e); }
+}
+function cargarEstadoLocal(){
+  try {
+    const raw = localStorage.getItem(LOCALSTORAGE_KEY);
+    if(!raw) return false; // primera vez que se abre este archivo en este navegador: se queda con los datos de ejemplo
+    const datos = JSON.parse(raw);
+    if(Array.isArray(datos.transactions)) transactions = datos.transactions;
+    if(datos.valoresUF && typeof datos.valoresUF === "object") valoresUF = datos.valoresUF;
+    if(datos.fechaIngresoPorColaborador && typeof datos.fechaIngresoPorColaborador === "object") fechaIngresoPorColaborador = datos.fechaIngresoPorColaborador;
+    return true;
+  } catch(e){ console.error("No se pudo restaurar el guardado automático de este navegador", e); return false; }
+}
+function borrarEstadoLocal(){
+  try { localStorage.removeItem(LOCALSTORAGE_KEY); } catch(e){ console.error("No se pudo borrar el guardado automático", e); }
+}
+// Se ejecuta apenas se carga el script (antes de cualquier render): si había algo guardado, pisa
+// los datos de ejemplo de arriba con lo último que el usuario dejó en este navegador.
+const seRestauroGuardadoLocal = cargarEstadoLocal();
 
 /* ==================== INDICADOR DE PERSISTENCIA / PERMANENCIA ====================
    Fórmula IDÉNTICA en Agentes.pdf, Salud.pdf y CONTRATO.pdf (verificada, texto extraído de los tres):
@@ -1199,6 +1242,7 @@ function escapeHtml(str){
 
 /* ==================== RENDER ==================== */
 function renderAll(){
+  guardarEstadoLocal(); // toda mutación en esta app termina llamando renderAll() - un solo punto de guardado
   document.getElementById('totalRegistrosHeader').textContent = transactions.length;
   poblarSelectColaboradorFiltro();
   poblarDatalistColaboradores();
@@ -2041,6 +2085,15 @@ document.addEventListener('DOMContentLoaded', () => {
   initVistas();
   initCargaExcel();
   initGuardarExcel();
+  initBorrarDatos();
+
+  // El texto "Datos de ejemplo cargados" solo aplica la primerísima vez que se abre este archivo en
+  // este navegador; si ya había un guardado automático, se avisa que se restauró (ver bloque
+  // "GUARDADO AUTOMÁTICO EN EL NAVEGADOR" más arriba).
+  if(seRestauroGuardadoLocal){
+    document.getElementById('estadoTexto').innerHTML = 'Datos restaurados de este navegador &middot; <span id="totalRegistrosHeader">0</span> transacciones';
+  }
+
   renderAll();
   revisarValorUFPeriodoActual();
 
@@ -2052,6 +2105,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+function initBorrarDatos(){
+  document.getElementById('btnBorrarDatos').addEventListener('click', () => {
+    const ok = confirm("¿Borrar TODO lo guardado en este navegador (transacciones, Valor UF, Fecha de Ingreso) y volver a los datos de ejemplo? Esto no se puede deshacer. Si quieres conservar un respaldo, usa \"Guardar en Excel\" antes de continuar.");
+    if(!ok) return;
+    borrarEstadoLocal();
+    location.reload();
+  });
+}
 
 })();
 </script>
